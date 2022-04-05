@@ -14,7 +14,7 @@ source:
     - patches/0004-point-to-system-CUDA-instead-of-vendored-header.patch
 
 build:
-  number: 0
+  number: 1
   # TODO: windows support should be available from next version;
   #       CPU-only support still under development
   skip: true  # [win or cuda_compiler_version == "None"]
