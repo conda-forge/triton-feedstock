@@ -1,11 +1,11 @@
-About triton
-============
+About triton-feedstock
+======================
+
+Feedstock license: [BSD-3-Clause](https://github.com/conda-forge/triton-feedstock/blob/main/LICENSE.txt)
 
 Home: https://github.com/openai/triton
 
 Package license: MIT
-
-Feedstock license: [BSD-3-Clause](https://github.com/conda-forge/triton-feedstock/blob/main/LICENSE.txt)
 
 Summary: Development repository for the Triton language and compiler
 
@@ -38,112 +38,84 @@ Current build status
               <td>linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.10.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.10.____cpython" alt="variant">
-                </a>
-              </td>
-            </tr><tr>
-              <td>linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.7.____cpython</td>
-              <td>
-                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.7.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.10.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.8.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.8.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.8.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.9.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.9.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version10.2cxx_compiler_version7python3.9.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.10.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.10.____cpython" alt="variant">
-                </a>
-              </td>
-            </tr><tr>
-              <td>linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.7.____cpython</td>
-              <td>
-                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.7.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.10.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.8.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.8.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.8.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.9.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.9.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version11.0cxx_compiler_version9python3.9.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.10.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.10.____cpython" alt="variant">
-                </a>
-              </td>
-            </tr><tr>
-              <td>linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.7.____cpython</td>
-              <td>
-                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.7.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.10.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.8.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.8.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.8.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.9.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.9.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version11.1cxx_compiler_version10python3.9.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.10.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.10.____cpython" alt="variant">
-                </a>
-              </td>
-            </tr><tr>
-              <td>linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.7.____cpython</td>
-              <td>
-                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.7.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.10.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.8.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.8.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.8.____cpython" alt="variant">
                 </a>
               </td>
             </tr><tr>
               <td>linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.9.____cpython</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=15875&branchName=main">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.9.____cpython" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/triton-feedstock?branchName=main&jobName=linux&configuration=linux%20linux_64_cuda_compiler_version11.2cxx_compiler_version10python3.9.____cpython" alt="variant">
                 </a>
               </td>
             </tr>
