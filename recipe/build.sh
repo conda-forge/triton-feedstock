@@ -3,11 +3,11 @@
 set -ex
 
 # need to communicate with setup.py
-export LLVM_LIBRARY_DIR="$PREFIX/lib"
-export LLVM_INCLUDE_DIRS="$PREFIX/include"
+export LLVM_SYSPATH="$PREFIX"
+export PYBIND11_SYSPATH="$PREFIX"
 
 # remove outdated vendored headers
-rm -rf $SRC_DIR/include/triton/external/CUDA
+rm -rf $SRC_DIR/python/triton/third_party
 
 cd python
 $PYTHON -m pip install . -vv
