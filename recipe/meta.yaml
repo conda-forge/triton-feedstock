@@ -11,6 +11,8 @@ source:
     - patches/0001-do-not-package-cuda.patch
     - patches/0002-fix-llvm.patch
     - patches/0003-properly-point-to-triton-includes.patch
+    - patches/0004-unvendor-packages.patch
+    - patches/0005-fix-tablegen.patch
 
 build:
   number: 0
@@ -25,8 +27,10 @@ requirements:
     - {{ compiler('cuda') }}
     - make
     - cmake
+    - mlir =14
   host:
     - python
+    - pybind11
     - pip
     - llvmdev =14
     - libzlib
@@ -35,6 +39,9 @@ requirements:
     - python
     - filelock
     - pytorch =*=cuda*
+    - libllvm14
+    - cmake
+    - lit =14
 
 test:
   imports:
