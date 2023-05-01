@@ -61,3 +61,11 @@ index 2ac3accd2..bfaa015e8 100644
  
  setup(
      name="triton",
+@@ -211,7 +212,6 @@ setup(
+     long_description="",
+     packages=["triton", "triton/_C", "triton/language", "triton/tools", "triton/impl", "triton/ops", "triton/runtime", "triton/ops/blocksparse"],
+     install_requires=[
+-        "cmake",
+         "filelock",
+         "torch",
+         "lit",
