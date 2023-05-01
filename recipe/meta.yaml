@@ -40,7 +40,6 @@ requirements:
     - filelock
     - pytorch =*=cuda*
     - libllvm14
-    - cmake
     - lit =14
 
 test:
