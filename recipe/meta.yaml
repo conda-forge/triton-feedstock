@@ -27,20 +27,20 @@ requirements:
     - {{ compiler('cuda') }}
     - make
     - cmake
-    - mlir =14
+    - mlir
   host:
     - python
     - pybind11
     - pip
-    - llvmdev =14
+    - llvmdev
     - libzlib
-    - mlir =14
+    - mlir
   run:
     - python
     - filelock
     - pytorch =*=cuda*
-    - libllvm14
-    - lit =14
+    # - libllvm14
+    - lit
 
 test:
   imports:
