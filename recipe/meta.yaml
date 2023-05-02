@@ -39,7 +39,7 @@ requirements:
     - python
     - filelock
     - pytorch =*=cuda*
-    # - libllvm14
+    - libllvm14
     - lit
 
 test:
