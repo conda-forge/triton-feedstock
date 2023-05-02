@@ -28,18 +28,18 @@ requirements:
     - make
     - cmake
     - mlir
+    - llvmdev
   host:
     - python
     - pybind11
     - pip
-    - llvmdev
+    - llvm
+    - libmlir
     - libzlib
-    - mlir
   run:
     - python
     - filelock
     - pytorch =*=cuda*
-    - libllvm14
     - lit
 
 test:

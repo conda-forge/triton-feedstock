@@ -1,6 +1,8 @@
 llvmdev:
   - 14
-clangdev:
+llvm:
   - 14
 mlir:
+  - 14
+libmlir:
   - 14
