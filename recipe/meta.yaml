@@ -1,4 +1,4 @@
-{% set version = "1.1.2" %}
+{% set version = "2.0.0" %}
 
 package:
   name: triton
@@ -6,18 +6,19 @@ package:
 
 source:
   url: https://github.com/openai/triton/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 44040696460f1d02a7251dd59468d7405982b55e112a9999ec759718066f7708
+  sha256: 19b6de0d0bcce86e973258d112169cd321b677146808bcc5fed7f69046775cfd
   patches:
-    - patches/0001-patch-include-paths-in-setup.py.patch
-    - patches/0002-add-missing-header.patch
+    - patches/0001-do-not-package-cuda.patch
+    - patches/0002-fix-llvm.patch
     - patches/0003-properly-point-to-triton-includes.patch
-    - patches/0004-point-to-system-CUDA-instead-of-vendored-header.patch
+    - patches/0004-unvendor-packages.patch
+    - patches/0005-fix-tablegen.patch
 
 build:
   number: 0
   # TODO: windows support should be available from next version;
   #       CPU-only support still under development
-  skip: true  # [win or cuda_compiler_version == "None"]
+  skip: true  # [win or cuda_compiler_version == "None" or cuda_compiler_version == "10.2"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
 
 requirements:
@@ -26,15 +27,20 @@ requirements:
     - {{ compiler('cuda') }}
     - make
     - cmake
+    - mlir
+    - llvmdev
   host:
     - python
+    - pybind11
     - pip
-    - llvmdev =11
+    - llvm
+    - libmlir
     - libzlib
   run:
     - python
     - filelock
     - pytorch =*=cuda*
+    - lit
 
 test:
   imports:
@@ -57,7 +63,7 @@ about:
   license: MIT
   license_family: MIT
   license_file: LICENSE
-  summary: 'Development repository for the Triton language and compiler'
+  summary: Development repository for the Triton language and compiler
   description: |
     This is the development repository of Triton, a language and compiler for writing highly efficient custom Deep-Learning primitives.
     The aim of Triton is to provide an open-source environment to write fast code at higher productivity than CUDA, but also with higher flexibility than other existing DSLs.

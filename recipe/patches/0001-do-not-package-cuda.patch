@@ -1,0 +1,13 @@
+--- a/python/setup.py
++++ b/python/setup.py
+@@ -216,8 +216,8 @@
+         "torch",
+         "lit",
+     ],
+-    package_data={"triton": ["third_party/**/*"]},
+-    include_package_data=True,
++#     package_data={"triton": ["third_party/**/*"]},
++#     include_package_data=True,
+     ext_modules=[CMakeExtension("triton", "triton/_C/")],
+     cmdclass={"build_ext": CMakeBuild},
+     zip_safe=False,
