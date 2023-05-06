@@ -13,9 +13,10 @@ source:
     - patches/0003-properly-point-to-triton-includes.patch
     - patches/0004-unvendor-packages.patch
     - patches/0005-fix-tablegen.patch
+    - patches/0006-remove-third-party-references.patch
 
 build:
-  number: 0
+  number: 1
   # TODO: windows support should be available from next version;
   #       CPU-only support still under development
   skip: true  # [win or cuda_compiler_version == "None" or cuda_compiler_version == "10.2"]
@@ -41,6 +42,7 @@ requirements:
     - filelock
     - pytorch =*=cuda*
     - lit
+    - cudatoolkit
 
 test:
   imports:
