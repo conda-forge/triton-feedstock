@@ -1,0 +1,60 @@
+From 0c8b2725a78a081859b9890b7475644ed3f6adf4 Mon Sep 17 00:00:00 2001
+From: Tobias Fischer <info@tobiasfischer.info>
+Date: Sun, 7 May 2023 14:53:42 +1000
+Subject: [PATCH 5/8] Unvendor third party libs
+
+---
+ CMakeLists.txt  |  3 ++-
+ python/setup.py | 11 ++++++-----
+ 2 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f04786bfa..f7536630b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -36,7 +36,8 @@ endif()
+ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+ 
+ # Third-party
+-include_directories(${PYBIND11_INCLUDE_DIR})
++# include_directories(${PYBIND11_INCLUDE_DIR})
++find_package(pybind11 REQUIRED)
+ 
+ if(WIN32)
+     SET(BUILD_SHARED_LIBS OFF)
+diff --git a/python/setup.py b/python/setup.py
+index 4aac07c71..e99b38408 100644
+--- a/python/setup.py
++++ b/python/setup.py
+@@ -161,7 +161,7 @@ class CMakeBuild(build_ext):
+         lit_dir = shutil.which('lit')
+         triton_cache_path = os.path.join(os.environ["HOME"], ".triton")
+         # lit is used by the test suite
+-        thirdparty_cmake_args = get_thirdparty_packages(triton_cache_path)
++        # thirdparty_cmake_args = get_thirdparty_packages(triton_cache_path)
+         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.path)))
+         # create build directories
+         if not os.path.exists(self.build_temp):
+@@ -177,9 +177,10 @@ class CMakeBuild(build_ext):
+             "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON",
+             "-DPYTHON_INCLUDE_DIRS=" + python_include_dir,
+         ]
+-        if lit_dir is not None:
+-            cmake_args.append("-DLLVM_EXTERNAL_LIT=" + lit_dir)
+-        cmake_args.extend(thirdparty_cmake_args)
++        # cmake_args.extend()
++        # if lit_dir is not None:
++        #     cmake_args.append("-DLLVM_EXTERNAL_LIT=" + lit_dir)
++        # cmake_args.extend(thirdparty_cmake_args)
+ 
+         # configuration
+         cfg = get_build_type()
+@@ -200,7 +201,7 @@ class CMakeBuild(build_ext):
+         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=self.build_temp)
+ 
+ 
+-download_and_copy_ptxas()
++# download_and_copy_ptxas()
+ 
+ setup(
+     name="triton",
