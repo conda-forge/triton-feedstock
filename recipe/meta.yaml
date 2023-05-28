@@ -8,14 +8,17 @@ source:
   url: https://github.com/openai/triton/archive/refs/tags/v{{ version }}.tar.gz
   sha256: 19b6de0d0bcce86e973258d112169cd321b677146808bcc5fed7f69046775cfd
   patches:
-    - patches/0001-do-not-package-cuda.patch
-    - patches/0002-fix-llvm.patch
+    - patches/0001-do-not-package-third_party-folder.patch
+    - patches/0002-Fix-error-that-FileCheck-is-already-defined.patch
     - patches/0003-properly-point-to-triton-includes.patch
-    - patches/0004-unvendor-packages.patch
-    - patches/0005-fix-tablegen.patch
+    - patches/0004-Avoid-using-outdated-FindLLVM.patch
+    - patches/0005-Unvendor-third-party-libs.patch
+    - patches/0006-Avoid-pip-check-error-as-cmake-is-not-a-python-modul.patch
+    - patches/0007-Fix-TableGen-issues.patch
+    - patches/0008-Search-for-libs-in-CONDA_PREFIX-instead-of-third_par.patch
 
 build:
-  number: 0
+  number: 1
   # TODO: windows support should be available from next version;
   #       CPU-only support still under development
   skip: true  # [win or cuda_compiler_version == "None" or cuda_compiler_version == "10.2"]
@@ -41,6 +44,7 @@ requirements:
     - filelock
     - pytorch =*=cuda*
     - lit
+    - cudatoolkit
 
 test:
   imports:

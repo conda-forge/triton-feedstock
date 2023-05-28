@@ -1,0 +1,24 @@
+From 8068a28350a65c738279a6a27052513087e69619 Mon Sep 17 00:00:00 2001
+From: Tobias Fischer <info@tobiasfischer.info>
+Date: Wed, 5 Apr 2023 11:57:44 +1000
+Subject: [PATCH 1/8] do not package third_party folder
+
+---
+ python/setup.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/python/setup.py b/python/setup.py
+index 2ac3accd2..4aac07c71 100644
+--- a/python/setup.py
++++ b/python/setup.py
+@@ -216,8 +216,8 @@ setup(
+         "torch",
+         "lit",
+     ],
+-    package_data={"triton": ["third_party/**/*"]},
+-    include_package_data=True,
++#     package_data={"triton": ["third_party/**/*"]},
++#     include_package_data=True,
+     ext_modules=[CMakeExtension("triton", "triton/_C/")],
+     cmdclass={"build_ext": CMakeBuild},
+     zip_safe=False,
