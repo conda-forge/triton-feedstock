@@ -38,6 +38,7 @@ requirements:
     - pip
     - llvm
     - libmlir
+    - zlib
     - libzlib
   run:
     - python
