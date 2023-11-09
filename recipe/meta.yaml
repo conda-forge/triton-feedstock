@@ -39,7 +39,6 @@ requirements:
     - llvm
     - libmlir
     - zlib
-    - libzlib
   run:
     - python
     - filelock
