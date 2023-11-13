@@ -1,5 +1,11 @@
 {% set version = "2.0.0" %}
 
+{% if cuda_compiler_version in (None, "None", True, False) %}
+{% set cuda_major = 0 %}
+{% else %}
+{% set cuda_major = environ.get("cuda_compiler_version", "11.8").split(".")[0] | int %}
+{% endif %}
+
 package:
   name: triton
   version: {{ version }}
@@ -44,8 +50,8 @@ requirements:
     - filelock
     - pytorch =*=cuda*
     - lit
-    - cudatoolkit {{ cuda_compiler_version }}  # [cuda_compiler_version < "12.0"]
-    - cuda-version {{ cuda_compiler_version }}  # [cuda_compiler_version >= "12.0"]
+    - cudatoolkit {{ cuda_compiler_version }}  # [cuda_major < 12]
+    - cuda-version {{ cuda_compiler_version }}  # [cuda_major >= 12.0]
 
 test:
   imports:
