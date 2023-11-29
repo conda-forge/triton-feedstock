@@ -34,7 +34,6 @@ requirements:
   build:
     - {{ compiler('cxx') }}
     - {{ compiler('cuda') }}
-    - cuda-version {{ cuda_compiler_version }}  # [cuda_major >= 12.0] 
     - make
     - cmake
     - mlir
