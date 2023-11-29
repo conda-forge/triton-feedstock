@@ -50,7 +50,6 @@ requirements:
     - filelock
     - pytorch =*=cuda*
     - lit
-    - cuda-version >={{ cuda_compiler_version }}  # [cuda_major >= 12]
 
 test:
   imports:
