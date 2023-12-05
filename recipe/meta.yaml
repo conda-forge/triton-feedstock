@@ -1,4 +1,4 @@
-{% set version = "2.0.0" %}
+{% set version = "2.1.0" %}
 
 package:
   name: triton
@@ -6,7 +6,7 @@ package:
 
 source:
   url: https://github.com/openai/triton/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 19b6de0d0bcce86e973258d112169cd321b677146808bcc5fed7f69046775cfd
+  sha256: 4338ca0e80a059aec2671f02bfc9320119b051f378449cf5f56a1273597a3d99
   patches:
     - patches/0001-do-not-package-third_party-folder.patch
     - patches/0002-Fix-error-that-FileCheck-is-already-defined.patch
@@ -18,7 +18,7 @@ source:
     - patches/0008-Search-for-libs-in-CONDA_PREFIX-instead-of-third_par.patch
 
 build:
-  number: 4
+  number: 0
   # TODO: windows support should be available from next version;
   #       CPU-only support still under development
   skip: true  # [win or cuda_compiler_version == "None"]
