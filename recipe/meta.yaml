@@ -20,16 +20,9 @@ requirements:
   build:
     - {{ compiler('cxx') }}
     - {{ compiler('cuda') }}
-    - make
-    - cmake
-    - mlir
-    - llvmdev
   host:
     - python
-    - pybind11
     - pip
-    - llvm
-    - libmlir
     - zlib
   run:
     - python
