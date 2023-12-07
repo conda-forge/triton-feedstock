@@ -7,7 +7,8 @@ package:
 source:
   url: https://github.com/openai/triton/archive/refs/tags/v{{ version }}.tar.gz
   sha256: 4338ca0e80a059aec2671f02bfc9320119b051f378449cf5f56a1273597a3d99
-
+  patches:
+    - patches/001-add-no-stringop-overflow-cxx-flag.patch
 build:
   number: 0
   # TODO: windows support should be available from next version;
