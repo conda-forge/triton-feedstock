@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 82df055a8..8b8aa82de 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -47,7 +47,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+ # Third-party
+ include_directories(${PYBIND11_INCLUDE_DIR})
+ 
+-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -D__STDC_FORMAT_MACROS  -fPIC -std=gnu++17 -fvisibility=hidden -fvisibility-inlines-hidden")
++set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -D__STDC_FORMAT_MACROS  -fPIC -std=gnu++17 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-stringop-overflow")
+ 
+ if(APPLE)
+   set(CMAKE_OSX_DEPLOYMENT_TARGET 11.6)
