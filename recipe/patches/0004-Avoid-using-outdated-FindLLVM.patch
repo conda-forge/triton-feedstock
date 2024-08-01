@@ -7,20 +7,17 @@ Subject: [PATCH 4/8] Avoid using outdated FindLLVM
  CMakeLists.txt | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 378a1150c..f04786bfa 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -7,9 +7,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
- 
+Index: triton/CMakeLists.txt
+===================================================================
+--- triton.orig/CMakeLists.txt	2024-04-02 12:31:39.190875478 -0500
++++ triton/CMakeLists.txt	2024-04-02 12:32:10.191502806 -0500
+@@ -15,9 +15,6 @@
  project(triton)
  include(CTest)
+ 
 -if(NOT WIN32)
 -  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 -endif()
-+# if(NOT WIN32)
-+#   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-+# endif()
  
  # Options
  option(TRITON_BUILD_TUTORIALS "Build C++ Triton tutorials" ON)

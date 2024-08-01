@@ -7,27 +7,21 @@ Subject: [PATCH 7/8] Fix TableGen issues
  CMakeLists.txt | 31 ++++++++++++++++++++++++++++---
  1 file changed, 28 insertions(+), 3 deletions(-)
 
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index f7536630b..b56d1fe1f 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -1,4 +1,4 @@
--cmake_minimum_required(VERSION 3.6)
-+cmake_minimum_required(VERSION 3.18)
- include(ExternalProject)
- 
- set(CMAKE_CXX_STANDARD 17)
-@@ -69,7 +69,7 @@ if (NOT MLIR_DIR)
+Index: triton/CMakeLists.txt
+===================================================================
+--- triton.orig/CMakeLists.txt	2024-04-02 12:41:48.288157839 -0500
++++ triton/CMakeLists.txt	2024-04-02 12:42:38.692262266 -0500
+@@ -68,7 +68,7 @@
          AMDGPUInfo AMDGPUcodegen
        )
      else()
 -      find_package(LLVM 11 REQUIRED COMPONENTS "nvptx;amdgpu")
 +      find_package(LLVM REQUIRED COMPONENTS "nvptx;amdgpu")
      endif()
-     message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-     # FindLLVM outputs LLVM_LIBRARY_DIRS but we expect LLVM_LIBRARY_DIR here
-@@ -169,7 +169,7 @@ endif()
  
+     message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+@@ -172,7 +172,7 @@
+ # endif()
  
  # MLIR
 -find_package(MLIR REQUIRED CONFIG PATHS ${MLIR_DIR})
@@ -35,7 +29,7 @@ index f7536630b..b56d1fe1f 100644
  
  list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
  list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
-@@ -178,6 +178,31 @@ include(TableGen) # required by AddMLIR
+@@ -181,6 +181,31 @@
  include(AddLLVM)
  include(AddMLIR)
  

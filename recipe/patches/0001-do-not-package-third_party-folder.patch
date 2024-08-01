@@ -7,18 +7,25 @@ Subject: [PATCH 1/8] do not package third_party folder
  python/setup.py | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/python/setup.py b/python/setup.py
-index 2ac3accd2..4aac07c71 100644
---- a/python/setup.py
-+++ b/python/setup.py
-@@ -216,8 +216,8 @@ setup(
-         "torch",
-         "lit",
+Index: triton/python/setup.py
+===================================================================
+--- triton.orig/python/setup.py	2024-04-01 16:58:26.077448738 -0500
++++ triton/python/setup.py	2024-04-02 12:25:45.247980479 -0500
+@@ -360,7 +360,6 @@
+         "triton/ops/blocksparse",
+         "triton/runtime",
+         "triton/runtime/backends",
+-        "triton/third_party",
+         "triton/tools",
      ],
--    package_data={"triton": ["third_party/**/*"]},
--    include_package_data=True,
-+#     package_data={"triton": ["third_party/**/*"]},
-+#     include_package_data=True,
-     ext_modules=[CMakeExtension("triton", "triton/_C/")],
-     cmdclass={"build_ext": CMakeBuild},
-     zip_safe=False,
+     install_requires=["filelock"],
+Index: triton/python/MANIFEST.in
+===================================================================
+--- triton.orig/python/MANIFEST.in	2024-04-02 12:24:58.804145806 -0500
++++ triton/python/MANIFEST.in	2024-04-02 12:25:52.665351813 -0500
+@@ -1,5 +1,4 @@
+ graft src
+-graft triton/third_party
+ graft triton/tools
+ graft triton/runtime/backends/
+ graft triton/language/extra
