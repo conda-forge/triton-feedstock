@@ -18,7 +18,7 @@ source:
     - patches/0008-Search-for-libs-in-CONDA_PREFIX-instead-of-third_par.patch
 
 build:
-  number: 4
+  number: 5
   # TODO: windows support should be available from next version;
   #       CPU-only support still under development
   skip: true  # [win or cuda_compiler_version == "None"]
@@ -27,6 +27,7 @@ build:
 requirements:
   build:
     - {{ compiler('cxx') }}
+    - {{ stdlib("c") }}
     - {{ compiler('cuda') }}
     - make
     - cmake
