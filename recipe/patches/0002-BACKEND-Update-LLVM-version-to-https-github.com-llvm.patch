@@ -1,0 +1,21 @@
+From de8eb1280acc39d88172a1eca00e30dc477469a6 Mon Sep 17 00:00:00 2001
+From: Pablo Zimmermann <karupayun@google.com>
+Date: Mon, 3 Jun 2024 16:45:16 +0200
+Subject: [PATCH 2/7] [BACKEND] Update LLVM version to
+ https://github.com/llvm/llvm-project/commit/765206e050453018e861637a08a4520f29238074
+ (#4059)
+
+---
+ cmake/llvm-hash.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/llvm-hash.txt b/cmake/llvm-hash.txt
+index f2895130b..302a71545 100644
+--- a/cmake/llvm-hash.txt
++++ b/cmake/llvm-hash.txt
+@@ -1 +1 @@
+-10dc3a8e916d73291269e5e2b82dd22681489aa1
++765206e050453018e861637a08a4520f29238074
+-- 
+2.47.0
+

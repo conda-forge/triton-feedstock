@@ -8,10 +8,16 @@ package:
   version: {{ version }}
 
 source:
-  git_url: https://github.com/openai/triton.git
-  git_rev: {{ git_commit }}
+  url: https://github.com/openai/triton/archive/{{ git_commit }}.tar.gz
+  sha256: 933babc32b69872efbce05fe8be61129fecf52c724fadea42d8c7b2d10e16ad9
   patches:
     - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
+    - patches/0002-BACKEND-Update-LLVM-version-to-https-github.com-llvm.patch
+    - patches/0003-BACKEND-Update-LLVM-version-to-https-github.com-llvm.patch
+    - patches/0004-BACKEND-Update-LLVM-to-llvm-llvm-project-657ec7320d8.patch
+    - patches/0005-BACKEND-Update-LLVM-version-to-https-github.com-llvm.patch
+    - patches/0006-BACKEND-Update-LLVM-version-to-https-github.com-llvm.patch
+    - patches/0007-Update-config.enableRegionSimplification-for-LLVM-19.patch
 
 build:
   number: 0
@@ -26,16 +32,14 @@ requirements:
     - {{ compiler('cuda') }}
     - make
     - cmake
-    # TODO: upstream requires LLVM 10dc3a8e916d73291269e5e2b82dd22681489aa1
-    # which falls between 18 and 19 releases
-    #    - mlir             < 19
-    #    - llvmdev          < 19
+    - mlir
+    - llvmdev
   host:
     - python
     - pybind11
     - pip
-    #    - llvm             < 19
-    #    - libmlir          < 19
+    - llvm
+    - libmlir
     - zlib
     - nlohmann_json
   run:

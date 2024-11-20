@@ -1,8 +1,8 @@
 llvmdev:
-  - 14
+  - 19
 llvm:
-  - 14
+  - 19
 mlir:
-  - 14
+  - 19
 libmlir:
-  - 14
+  - 19

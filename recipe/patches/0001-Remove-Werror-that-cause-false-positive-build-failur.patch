@@ -1,7 +1,7 @@
 From 9d5dbe255727914ebb362de70dc925cb77f70d65 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
 Date: Wed, 20 Nov 2024 17:17:18 +0100
-Subject: [PATCH] Remove -Werror that cause false-positive build failures
+Subject: [PATCH 1/7] Remove -Werror that cause false-positive build failures
 
 ---
  CMakeLists.txt | 2 +-
