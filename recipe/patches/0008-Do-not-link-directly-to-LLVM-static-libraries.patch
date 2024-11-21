@@ -1,0 +1,70 @@
+From 37679db6f70aeca81c18c4474a07c65b09bed3ed Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
+Date: Thu, 21 Nov 2024 15:02:04 +0100
+Subject: [PATCH 8/8] Do not link directly to LLVM static libraries
+
+Remove direct linking to LLVM static libraries, use the shared library
+enforced by MLIR instead.  It is incorrect to simultaneously link to
+shared and static LLVM libraries, and it results in errors:
+
+    : CommandLine Error: Option 'print-pipeline-passes' registered more than once!
+
+Since static MLIR libraries expose an indirect dependency on the shared
+LLVM library, remove direct linking to static libraries.
+---
+ CMakeLists.txt     | 21 ---------------------
+ bin/CMakeLists.txt |  6 ------
+ 2 files changed, 27 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 486e7c93f..ecfa152c5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -205,28 +205,7 @@ if(TRITON_BUILD_PYTHON_MODULE)
+     MLIRIndexToLLVM
+     MLIRGPUToROCDLTransforms
+ 
+-    # LLVM
+-    LLVMPasses
+-    LLVMNVPTXCodeGen
+-    # LLVMNVPTXAsmPrinter
+-    LLVMAMDGPUCodeGen
+-    LLVMAMDGPUAsmParser
+-
+   )
+-  if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR # Linux arm64
+-     CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")     # macOS arm64
+-      list(APPEND TRITON_LIBRARIES
+-          LLVMAArch64CodeGen
+-          LLVMAArch64AsmParser
+-      )
+-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+-      list(APPEND TRITON_LIBRARIES
+-          LLVMX86CodeGen
+-          LLVMX86AsmParser
+-      )
+-  else()
+-      message(FATAL_ERROR "LLVM codegen/ASM parser libs: This HW architecture is not configured in cmake lib dependencies.")
+-  endif()
+ 
+   # Define triton library
+   string(JOIN "," TRITON_BACKENDS_TUPLE ${TRITON_CODEGEN_BACKENDS})
+diff --git a/bin/CMakeLists.txt b/bin/CMakeLists.txt
+index 1c8f45448..ae77e42ce 100644
+--- a/bin/CMakeLists.txt
++++ b/bin/CMakeLists.txt
+@@ -82,11 +82,5 @@ add_llvm_executable(triton-llvm-opt
+   )
+ target_link_libraries(triton-llvm-opt PRIVATE
+   TritonLLVMIR
+-
+-  LLVMAnalysis
+-  LLVMCore
+-  LLVMSupport
+-  LLVMOption
+-  LLVMCodeGen
+   )
+ export_executable_symbols_for_plugins(triton-llvm-opt)
+-- 
+2.47.0
+

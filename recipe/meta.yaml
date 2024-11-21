@@ -18,6 +18,7 @@ source:
     - patches/0005-BACKEND-Update-LLVM-version-to-https-github.com-llvm.patch
     - patches/0006-BACKEND-Update-LLVM-version-to-https-github.com-llvm.patch
     - patches/0007-Update-config.enableRegionSimplification-for-LLVM-19.patch
+    - patches/0008-Do-not-link-directly-to-LLVM-static-libraries.patch
 
 build:
   number: 0
