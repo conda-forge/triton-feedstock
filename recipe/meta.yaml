@@ -32,7 +32,7 @@ requirements:
     - {{ compiler('cxx') }}
     - {{ compiler('cuda') }}
     - {{ stdlib('c') }}
-    - make
+    - ninja
     - cmake
     - mlir
     - llvmdev
