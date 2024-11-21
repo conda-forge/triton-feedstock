@@ -45,11 +45,16 @@ requirements:
     - libmlir
     - zlib
     - nlohmann_json
+    - cuda-cupti-dev
   run:
     - python
     - filelock
     - pytorch =*=cuda*
     - lit
+    - cuda-nvcc
+    - cuda-cuobjdump
+    - cuda-cudart
+    - cuda-cupti
 
 test:
   imports:
