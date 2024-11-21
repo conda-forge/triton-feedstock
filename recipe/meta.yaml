@@ -30,6 +30,7 @@ requirements:
   build:
     - {{ compiler('cxx') }}
     - {{ compiler('cuda') }}
+    - {{ stdlib('c') }}
     - make
     - cmake
     - mlir
@@ -38,6 +39,7 @@ requirements:
     - python
     - pybind11
     - pip
+    - setuptools
     - llvm
     - libmlir
     - zlib
