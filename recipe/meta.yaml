@@ -33,7 +33,7 @@ source:
     - patches/0008-Do-not-link-directly-to-LLVM-static-libraries.patch
 
 build:
-  number: 0
+  number: 1
   # TODO: windows support should be available from next version;
   #       CPU-only support still under development
   skip: true  # [win or cuda_compiler_version == "None"]
