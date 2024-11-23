@@ -1,6 +1,9 @@
 {% set version = "3.1.0" %}
-# Triton no longer tags releases.  We're taking the commit id from
-# PyTorch's .ci/docker/ci_commit_pins/triton.txt 
+# Triton no longer tags releases, but there are release branches, e.g.
+# https://github.com/triton-lang/triton/commits/release/3.1.x/
+# Check if the commit id from Pytorch's latest pinned commit in
+# https://github.com/pytorch/pytorch/blob/v{{ pytorch_ver }}/.ci/docker/ci_commit_pins/triton.txt
+# can be found on one of those release branches, and use that as the version
 {% set git_commit = "5fe38ffd73c2ac6ed6323b554205186696631c6f" %}
 
 package:
