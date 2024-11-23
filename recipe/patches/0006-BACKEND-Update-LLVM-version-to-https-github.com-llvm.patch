@@ -1,0 +1,58 @@
+From 2a8089853b8f57741977e31bc321bde5357cca34 Mon Sep 17 00:00:00 2001
+From: Aliia Khasanova <40315403+khasanovaa@users.noreply.github.com>
+Date: Fri, 30 Aug 2024 07:16:34 +0200
+Subject: [PATCH 6/7] [BACKEND] Update LLVM version to
+ https://github.com/llvm/llvm-project/commit/1115dee248e68a155001ac3712a189299d104863
+ (#4537)
+
+1. Updated llvm version up to 1115dee248e68a155001ac3712a189299d104863
+2. Included fixes that are required to the codebase to correspond the
+new version
+3. Fixed naming and version of gcc package
+
+---------
+
+Co-authored-by: Tori Baker <vwbaker@google.com>
+Co-authored-by: Goran Flegar <gflegar@google.com>
+Co-authored-by: Florian Reichl <63750742+reichlfl@users.noreply.github.com>
+Co-authored-by: Pablo Zimmermann <karupayun@google.com>
+Co-authored-by: Christian Sigg <chsigg@users.noreply.github.com>
+---
+ .../amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp        | 2 +-
+ third_party/amd/python/triton_amd.cc                        | 6 ++----
+ 2 files changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp b/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp
+index 73af042e0..9a9a4b14b 100644
+--- a/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp
++++ b/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp
+@@ -117,7 +117,7 @@ private:
+     auto operands = callOp.getOperands();
+     auto result = callOp.getResult();
+ 
+-    LLVM::LLVMFunctionType calleeType = callOp.getCalleeType().value();
++    LLVM::LLVMFunctionType calleeType = callOp.getCalleeFunctionType();
+     Type returnType = calleeType.getReturnType();
+ 
+     auto loc = callOp.getLoc();
+diff --git a/third_party/amd/python/triton_amd.cc b/third_party/amd/python/triton_amd.cc
+index ddc1feb2a..0ca45e057 100644
+--- a/third_party/amd/python/triton_amd.cc
++++ b/third_party/amd/python/triton_amd.cc
+@@ -184,11 +184,9 @@ void init_triton_amd(py::module &&m) {
+             target->createMCCodeEmitter(*mcii, ctx));
+         std::unique_ptr<llvm::MCAsmBackend> mab(
+             target->createMCAsmBackend(*sti, *mri, mcOptions));
++        std::unique_ptr<llvm::MCObjectWriter> ow(mab->createObjectWriter(svos));
+         mcStreamer.reset(target->createMCObjectStreamer(
+-            triple, ctx, std::move(mab), mab->createObjectWriter(svos),
+-            std::move(ce), *sti, mcOptions.MCRelaxAll,
+-            mcOptions.MCIncrementalLinkerCompatible,
+-            /*DWARFMustBeAtTheEnd=*/false));
++            triple, ctx, std::move(mab), std::move(ow), std::move(ce), *sti));
+ 
+         std::unique_ptr<llvm::MCAsmParser> parser(
+             createMCAsmParser(srcMgr, ctx, *mcStreamer, *mai));
+-- 
+2.47.0
+

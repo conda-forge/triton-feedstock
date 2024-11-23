@@ -1,0 +1,58 @@
+From fdf74ff5cbf10297e0dc63f5b9dfc8c3ef14acad Mon Sep 17 00:00:00 2001
+From: Giuseppe Rossini <giuseppe.rossini@amd.com>
+Date: Wed, 19 Jun 2024 16:54:49 +0100
+Subject: [PATCH 4/7] [BACKEND] Update LLVM  to llvm/llvm-project@657ec7320d8a
+ (#4147)
+
+Upgrading LLVM repo again, because we need a feature that has been
+recently submitted in https://github.com/llvm/llvm-project/pull/95057
+
+Changes made:
+- `MathExtras` has been merged with its LLVM version. So I had to
+replace `mlir::ceilDiv` with `llvm:divideCeilSigned`
+---
+ .../TritonGPU/Transforms/Pipeliner/PipelineExpander.cpp       | 4 ++--
+ test/Triton/reproducer.mlir                                   | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/lib/Dialect/TritonGPU/Transforms/Pipeliner/PipelineExpander.cpp b/lib/Dialect/TritonGPU/Transforms/Pipeliner/PipelineExpander.cpp
+index 6dfd0e344..92ad4b93e 100644
+--- a/lib/Dialect/TritonGPU/Transforms/Pipeliner/PipelineExpander.cpp
++++ b/lib/Dialect/TritonGPU/Transforms/Pipeliner/PipelineExpander.cpp
+@@ -26,10 +26,10 @@
+ #include "mlir/Dialect/SCF/Utils/Utils.h"
+ #include "mlir/IR/IRMapping.h"
+ #include "mlir/IR/PatternMatch.h"
+-#include "mlir/Support/MathExtras.h"
+ #include "mlir/Transforms/RegionUtils.h"
+ #include "llvm/ADT/MapVector.h"
+ #include "llvm/Support/Debug.h"
++#include "llvm/Support/MathExtras.h"
+ 
+ #include "PipelineExpander.h"
+ 
+@@ -131,7 +131,7 @@ bool LoopPipelinerInternal::initializeLoopInfo(
+     int64_t ubImm = upperBoundCst.value();
+     int64_t lbImm = lowerBoundCst.value();
+     int64_t stepImm = stepCst.value();
+-    int64_t numIteration = ceilDiv(ubImm - lbImm, stepImm);
++    int64_t numIteration = llvm::divideCeilSigned(ubImm - lbImm, stepImm);
+     if (numIteration > maxStage) {
+       dynamicLoop = false;
+     } else if (!options.supportDynamicLoops) {
+diff --git a/test/Triton/reproducer.mlir b/test/Triton/reproducer.mlir
+index ea4579e3e..f2c3a0f8e 100644
+--- a/test/Triton/reproducer.mlir
++++ b/test/Triton/reproducer.mlir
+@@ -9,7 +9,7 @@ module attributes {"triton_gpu.target" = "cuda:90", "triton_gpu.num-ctas" = 1 :
+ {-#
+   external_resources: {
+     mlir_reproducer: {
+-      pipeline: "builtin.module(any(convert-scf-to-cf,convert-index-to-llvm{index-bitwidth=0},convert-triton-gpu-to-llvm{compute-capability=90},convert-nv-gpu-to-llvm,convert-arith-to-llvm{index-bitwidth=0},canonicalize{  max-iterations=10 max-num-rewrites=-1 region-simplify=true test-convergence=false top-down=true},cse,symbol-dce,enable-line-info))",
++      pipeline: "builtin.module(any(convert-scf-to-cf,convert-index-to-llvm{index-bitwidth=0},convert-triton-gpu-to-llvm{compute-capability=90},convert-nv-gpu-to-llvm,convert-arith-to-llvm{index-bitwidth=0},canonicalize{  max-iterations=10 max-num-rewrites=-1 region-simplify=normal test-convergence=false top-down=true},cse,symbol-dce,enable-line-info))",
+       disable_threading: false,
+       verify_each: false
+     }
+-- 
+2.47.0
+

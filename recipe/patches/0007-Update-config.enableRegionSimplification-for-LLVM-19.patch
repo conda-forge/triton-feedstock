@@ -1,0 +1,27 @@
+From da416f557317a3de6a10630c325932a041c1e3d7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
+Date: Wed, 20 Nov 2024 20:44:03 +0100
+Subject: [PATCH 7/7] Update config.enableRegionSimplification for LLVM 19
+
+Copy the new config.enableRegionSimplification value as present
+in the main branch of triton.
+---
+ third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp b/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp
+index 9a9a4b14b..131285a5a 100644
+--- a/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp
++++ b/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp
+@@ -169,7 +169,7 @@ struct ConvertBuiltinFuncToLLVM
+     // https://github.com/llvm/llvm-project/issues/63230
+     // TODO(giuseros): enable block merging once the above ticket is completed
+     GreedyRewriteConfig config;
+-    config.enableRegionSimplification = false;
++    config.enableRegionSimplification = GreedySimplifyRegionLevel::Normal;
+ 
+     RewritePatternSet patterns(context);
+     patterns.add<CallOpConversion>(context);
+-- 
+2.47.0
+
