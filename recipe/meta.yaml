@@ -85,7 +85,9 @@ test:
     - pip check
     # test suite essentially depends on availability of a physical GPU,
     # see https://github.com/openai/triton/issues/466;
-    # - pytest -v python/test
+    # run a test that does not require a GPU but checks
+    # if triton.compile() works
+    - pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_ptx
 
 about:
   home: https://github.com/openai/triton
