@@ -1,0 +1,52 @@
+From e7f10ca2067ed0c960d03e95f0a149d2f5d8dc00 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
+Date: Tue, 26 Nov 2024 11:58:06 +0100
+Subject: [PATCH 10/10] Use system PATH to find tools (in CONDA_PREFIX)
+
+---
+ python/triton/backends/compiler.py     | 2 ++
+ third_party/nvidia/backend/compiler.py | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/python/triton/backends/compiler.py b/python/triton/backends/compiler.py
+index 990690045..08d7750ba 100644
+--- a/python/triton/backends/compiler.py
++++ b/python/triton/backends/compiler.py
+@@ -1,5 +1,6 @@
+ import os
+ import re
++import shutil
+ import subprocess
+ 
+ from abc import ABCMeta, abstractmethod, abstractclassmethod
+@@ -28,6 +29,7 @@ class BaseBackend(metaclass=ABCMeta):
+         paths = [
+             os.environ.get(f"TRITON_{binary.upper()}_PATH", ""),
+             os.path.join(base_dir, "third_party", "cuda", "bin", binary),
++            shutil.which(binary),
+         ]
+         for p in paths:
+             bin = p.split(" ")[0]
+diff --git a/third_party/nvidia/backend/compiler.py b/third_party/nvidia/backend/compiler.py
+index 807775f93..cd8b6adae 100644
+--- a/third_party/nvidia/backend/compiler.py
++++ b/third_party/nvidia/backend/compiler.py
+@@ -11,6 +11,7 @@ import signal
+ import os
+ import subprocess
+ from pathlib import Path
++import shutil
+ 
+ 
+ @functools.lru_cache()
+@@ -18,6 +19,7 @@ def _path_to_binary(binary: str):
+     paths = [
+         os.environ.get(f"TRITON_{binary.upper()}_PATH", ""),
+         os.path.join(os.path.dirname(__file__), "bin", binary),
++        shutil.which(binary),
+     ]
+ 
+     for bin in paths:
+-- 
+2.47.1
+

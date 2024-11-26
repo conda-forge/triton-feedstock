@@ -33,6 +33,7 @@ source:
     - patches/0008-Do-not-link-directly-to-LLVM-static-libraries.patch
     # https://github.com/triton-lang/triton/commit/f48dbc1b106c93144c198fbf3c4f30b2aab9d242
     - patches/0009-CODEGEN-Support-CUDA-12.6-4588.patch
+    - patches/0010-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
 
 build:
   number: 2
