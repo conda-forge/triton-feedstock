@@ -19,5 +19,9 @@ export TRITON_CUPTI_PATH=$PREFIX
 
 export MAX_JOBS=$CPU_COUNT
 
+# the build does not run C++ unittests, and they implicitly fetch gtest
+# no easy way of passing this, not really worth a whole patch
+sed -i -e '/TRITON_BUILD_UT/s:\bON:OFF:' CMakeLists.txt
+
 cd python
 $PYTHON -m pip install . -vv
