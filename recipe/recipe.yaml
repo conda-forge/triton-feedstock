@@ -66,7 +66,6 @@ requirements:
   run:
     - python
     - filelock
-    - pytorch * cuda*
     - lit
     - cuda-nvcc
     - cuda-cuobjdump
