@@ -52,6 +52,7 @@ requirements:
     - cmake
     - mlir
     - llvmdev
+    - sed
   host:
     - python
     - pybind11
