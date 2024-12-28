@@ -43,7 +43,9 @@ build:
   number: ${{ build_number }}
   string: cuda${{ cuda_compiler_version | version_to_buildstring }}py${{ python | version_to_buildstring }}h${{ hash }}_${{ build_number }}
   # TODO: CPU-only support still under development
-  skip: "unix or cuda_compiler_version == \"None\""
+  # No success enabling Windows build as of 3.1.0:
+  # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
+  skip: "win or cuda_compiler_version == \"None\""
 
 requirements:
   build:
