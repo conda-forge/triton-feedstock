@@ -36,6 +36,8 @@ source:
     # https://github.com/triton-lang/triton/commit/f48dbc1b106c93144c198fbf3c4f30b2aab9d242
     - patches/0009-CODEGEN-Support-CUDA-12.6-4588.patch
     - patches/0010-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
+    # https://github.com/triton-lang/triton/commit/0591b3756bd4143b7163235c0eca4d718948e982
+    - patches/0011-Don-t-specify-A-x64-option-and-reuse-cmake-build-typ.patch
 
 build:
   number: ${{ build_number }}
