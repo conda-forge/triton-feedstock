@@ -38,6 +38,9 @@ source:
     - patches/0010-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
     # https://github.com/triton-lang/triton/commit/0591b3756bd4143b7163235c0eca4d718948e982
     - patches/0011-Don-t-specify-A-x64-option-and-reuse-cmake-build-typ.patch
+    # https://github.com/triton-lang/triton/commit/3bfdbc0cba3e4838364bf6bd204fa522e1665458
+    # (use removed earlier)
+    - patches/0012-remove-unused-requirement-filelock-4356.patch
 
 build:
   number: ${{ build_number }}
@@ -71,7 +74,6 @@ requirements:
     - cuda-cupti-dev
   run:
     - python
-    - filelock
     - setuptools
     - cuda-nvcc
     - cuda-cuobjdump
