@@ -25,3 +25,7 @@ cuda_compiler:
   - cuda-nvcc
 cuda_compiler_version:
   - 12.6
+c_compiler:                                       # [win]
+  - clang                                         # [win]
+cxx_compiler:                                     # [win]
+  - clangxx                                       # [win]
