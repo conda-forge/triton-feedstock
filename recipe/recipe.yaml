@@ -52,8 +52,9 @@ requirements:
     - cmake
     - mlir
     - llvmdev
-    - sed     # [unix]
-    - m2-sed  # [win]
+    - if: win
+      then: m2-sed
+      else: sed
   host:
     - python
     - pybind11
