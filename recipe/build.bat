@@ -19,5 +19,8 @@ rem the build does not run C++ unittests, and they implicitly fetch gtest
 rem no easy way of passing this, not really worth a whole patch
 sed -i -e '/TRITON_BUILD_UT/s:\bON:OFF:' CMakeLists.txt
 
+rem incompatible with MSVC
+sed -i -e 's:-Wno-covered-switch-default::' CMakeLists.txt
+
 cd python
 %PYTHON% -m pip install . -vv
