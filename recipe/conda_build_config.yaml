@@ -21,7 +21,7 @@ fortran_compiler_version:                         # [linux64]
   - 13                                            # [linux64]
 cdt_name:                                         # [linux64]
   - cos7                                          # [linux64]
-cuda_compiler:                                    # [linux64]
-  - cuda-nvcc                                     # [linux64]
-cuda_compiler_version:                            # [linux64]
-  - 12.6                                          # [linux64]
+cuda_compiler:
+  - cuda-nvcc
+cuda_compiler_version:
+  - 12.6
