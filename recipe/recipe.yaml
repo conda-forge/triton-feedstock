@@ -67,6 +67,7 @@ requirements:
     - python
     - filelock
     - lit
+    - setuptools
     - cuda-nvcc
     - cuda-cuobjdump
     - cuda-cudart
