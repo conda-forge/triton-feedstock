@@ -1,0 +1,71 @@
+From 4c4c6a4327508db8ca6adc0fb01fdb6ec16572ff Mon Sep 17 00:00:00 2001
+From: Cunshun Xia <505481172@qq.com>
+Date: Fri, 19 Jul 2024 23:11:15 +0800
+Subject: [PATCH 12/12] remove unused requirement 'filelock' (#4356)
+
+The core Triton is a small number of people, and we receive many PRs
+(thank
+you!).  To help us review your code more quickly, **if you are a new
+contributor (less than 3 PRs merged) we ask that you complete the
+following
+tasks and include the filled-out checklist in your PR description.**
+
+Complete the following tasks before sending your PR, and replace `[ ]`
+with
+`[x]` to indicate you have done them.
+
+- [x] I am not making a trivial change, such as fixing a typo in a
+comment.
+
+- [x] I have written a PR description following these
+  [rules](https://cbea.ms/git-commit/#why-not-how).
+
+- [x] I have run `pre-commit run --from-ref origin/main --to-ref HEAD`.
+
+- Select one of the following.
+  - [ ] I have added tests.
+    - `/test` for `lit` tests
+    - `/unittest` for C++ tests
+    - `/python/test` for end-to-end tests
+  - [x] This PR does not need a test because `FILL THIS IN`.
+
+- Select one of the following.
+  - [x] I have not added any `lit` tests.
+- [ ] The `lit` tests I have added follow these [best
+practices](https://mlir.llvm.org/getting_started/TestingGuide/#filecheck-best-practices),
+including the "tests should be minimal" section. (Usually running Python
+code
+    and using the instructions it generates is not minimal.)
+
+Signed-off-by: cunshunxia <cunshunxia@tencent.com>
+---
+ python/setup.py | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/python/setup.py b/python/setup.py
+index da924502b..30c317328 100644
+--- a/python/setup.py
++++ b/python/setup.py
+@@ -572,11 +572,6 @@ def get_entry_points():
+     return entry_points
+ 
+ 
+-def get_install_requires():
+-    install_requires = ["filelock"]
+-    return install_requires
+-
+-
+ setup(
+     name=os.environ.get("TRITON_WHEEL_NAME", "triton"),
+     version="3.1.0" + os.environ.get("TRITON_WHEEL_VERSION_SUFFIX", ""),
+@@ -586,7 +581,6 @@ setup(
+     long_description="",
+     packages=get_packages(),
+     entry_points=get_entry_points(),
+-    install_requires=get_install_requires(),
+     package_data=package_data,
+     include_package_data=True,
+     ext_modules=[CMakeExtension("triton", "triton/_C/")],
+-- 
+2.47.1
+
