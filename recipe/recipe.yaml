@@ -41,6 +41,8 @@ source:
     # https://github.com/triton-lang/triton/commit/3bfdbc0cba3e4838364bf6bd204fa522e1665458
     # (use removed earlier)
     - patches/0012-remove-unused-requirement-filelock-4356.patch
+    # https://github.com/triton-lang/triton/commit/3210195501ca58d89b8fbc52380320344eb076c3
+    - patches/0013-Windows-related-changes-in-CMakeLists.txt-5186.patch
 
 build:
   number: ${{ build_number }}

@@ -1,0 +1,102 @@
+From 3210195501ca58d89b8fbc52380320344eb076c3 Mon Sep 17 00:00:00 2001
+From: Anatoly Myachev <anatoly.myachev@intel.com>
+Date: Mon, 25 Nov 2024 15:36:53 +0100
+Subject: [PATCH 13/13] Windows related changes in `CMakeLists.txt` (#5186)
+
+Upstreaming some of our Windows related changes assuming that there is
+interest in this
+https://github.com/triton-lang/triton/issues/5094#issuecomment-2462747885
+and hoping that it will not make it much more difficult to support this
+CMake file.
+
+---------
+
+Signed-off-by: Anatoly Myachev <anatoly.myachev@intel.com>
+---
+ CMakeLists.txt | 35 ++++++++++++++++++++++++++---------
+ 1 file changed, 26 insertions(+), 9 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ecfa152c5..eca09d5ab 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -15,11 +15,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
+ project(triton)
+ include(CTest)
+ 
+-if(NOT WIN32)
+-  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+-endif()
+-
+-
++list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+ 
+ # Options
+ option(TRITON_BUILD_TUTORIALS "Build C++ Triton tutorials" ON)
+@@ -32,8 +28,17 @@ set(TRITON_CODEGEN_BACKENDS "" CACHE STRING "Enable different codegen backends")
+ # used conditionally in this file and by lit tests
+ 
+ # Customized release build type with assertions: TritonRelBuildWithAsserts
+-set(CMAKE_C_FLAGS_TRITONRELBUILDWITHASSERTS "-O2 -g")
+-set(CMAKE_CXX_FLAGS_TRITONRELBUILDWITHASSERTS "-O2 -g")
++if(NOT MSVC)
++  set(CMAKE_C_FLAGS_TRITONRELBUILDWITHASSERTS "-O2 -g")
++  set(CMAKE_CXX_FLAGS_TRITONRELBUILDWITHASSERTS "-O2 -g")
++else()
++  set(CMAKE_C_FLAGS_TRITONRELBUILDWITHASSERTS "/Zi /RTC1 /bigobj /Zc:preprocessor")
++  set(CMAKE_CXX_FLAGS_TRITONRELBUILDWITHASSERTS "/Zi /RTC1 /bigobj /Zc:preprocessor")
++  set(CMAKE_EXE_LINKER_FLAGS_TRITONRELBUILDWITHASSERTS "/debug:fastlink /INCREMENTAL")
++  set(CMAKE_MODULE_LINKER_FLAGS_TRITONRELBUILDWITHASSERTS "/debug:fastlink /INCREMENTAL")
++  set(CMAKE_SHARED_LINKER_FLAGS_TRITONRELBUILDWITHASSERTS "/debug:fastlink /INCREMENTAL")
++  set(CMAKE_STATIC_LINKER_FLAGS_TRITONRELBUILDWITHASSERTS "/debug:fastlink /INCREMENTAL")
++endif()
+ 
+ # Default build type
+ if(NOT CMAKE_BUILD_TYPE)
+@@ -47,7 +52,11 @@ endif()
+ 
+ # Compiler flags
+ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -D__STDC_FORMAT_MACROS  -fPIC -std=gnu++17")
++if(NOT MSVC)
++  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__STDC_FORMAT_MACROS  -fPIC -std=gnu++17")
++else()
++  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__STDC_FORMAT_MACROS")
++endif()
+ 
+ 
+ # #########
+@@ -101,7 +110,11 @@ endfunction()
+ 
+ 
+ # Disable warnings that show up in external code (gtest;pybind11)
+-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-covered-switch-default -fvisibility=hidden")
++if(NOT MSVC)
++  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-covered-switch-default -fvisibility=hidden")
++else()
++  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX- /wd4244 /wd4624 /wd4715 /wd4530")
++endif()
+ 
+ include_directories(".")
+ include_directories(${MLIR_INCLUDE_DIRS})
+@@ -228,6 +241,8 @@ if(TRITON_BUILD_PYTHON_MODULE)
+   target_link_libraries(triton PUBLIC ${TRITON_LIBRARIES})
+   if(WIN32)
+     target_link_libraries(triton PRIVATE ${CMAKE_DL_LIBS})
++    set_target_properties(triton PROPERTIES SUFFIX ".pyd")
++    set_target_properties(triton PROPERTIES PREFIX "lib")
+   else()
+     target_link_libraries(triton PRIVATE z)
+   endif()
+@@ -255,6 +270,8 @@ if(NOT TRITON_BUILD_PYTHON_MODULE)
+   endforeach()
+ endif()
+ 
++find_package(Threads REQUIRED)
++
+ add_subdirectory(third_party/f2reduce)
+ add_subdirectory(bin)
+ add_subdirectory(test)
+-- 
+2.47.1
+
