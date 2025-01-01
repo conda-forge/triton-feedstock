@@ -20,7 +20,7 @@ rem no easy way of passing this, not really worth a whole patch
 sed -i -e '/TRITON_BUILD_UT/s:\bON:OFF:' CMakeLists.txt
 
 rem test https://github.com/llvm/llvm-project/pull/121437
-sed -i -e 's:MSVC:WIN32:' %PREFIX%\lib\cmake\llvm\Findzstd.cmake
+sed -i -e 's:MSVC:WIN32:' %BUILD_PREFIX%\lib\cmake\llvm\Findzstd.cmake
 
 cd python
 %PYTHON% -m pip install . -vv
