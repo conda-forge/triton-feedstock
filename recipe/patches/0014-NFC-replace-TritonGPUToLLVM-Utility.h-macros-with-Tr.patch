@@ -1,7 +1,7 @@
 From 8205b764298e1e1e3f9a05f7b5e3d3d94ce56229 Mon Sep 17 00:00:00 2001
 From: Maksim Levental <maksim.levental@gmail.com>
 Date: Tue, 28 Jan 2025 13:45:21 -0600
-Subject: [PATCH 14/16] [NFC] replace TritonGPUToLLVM/Utility.h macros with
+Subject: [PATCH 14/17] [NFC] replace TritonGPUToLLVM/Utility.h macros with
  TritonLLVMOpBuilder (#5717)
 
 Fixes #5691 and unblocks #5684

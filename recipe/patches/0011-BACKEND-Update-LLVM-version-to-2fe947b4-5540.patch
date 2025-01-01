@@ -1,7 +1,7 @@
 From 0019f953e3d7b3665ea294bf28850e8fa2496374 Mon Sep 17 00:00:00 2001
 From: Maksim Levental <maksim.levental@gmail.com>
 Date: Mon, 13 Jan 2025 13:18:32 -0500
-Subject: [PATCH 11/16] [BACKEND] Update LLVM version to 2fe947b4 (#5540)
+Subject: [PATCH 11/17] [BACKEND] Update LLVM version to 2fe947b4 (#5540)
 
 The only change here is due to deprecation of `applyPatternsAndFoldGreedily`.
 

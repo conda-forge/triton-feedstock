@@ -1,7 +1,7 @@
 From 72c9564db99710c51328dd54e7e1987f5c86ecc5 Mon Sep 17 00:00:00 2001
 From: Maksim Levental <maksim.levental@gmail.com>
 Date: Wed, 29 Jan 2025 12:45:24 -0600
-Subject: [PATCH 15/16] [BACKEND] bump to llvm/llvm-project@c118864223c6
+Subject: [PATCH 15/17] [BACKEND] bump to llvm/llvm-project@c118864223c6
  (#5684)
 
 Pulls in https://github.com/llvm/llvm-project/pull/123200 which is
