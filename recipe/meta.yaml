@@ -42,9 +42,7 @@ build:
   number: {{ build_number }}
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
   # TODO: CPU-only support still under development
-  # No success enabling Windows build as of 3.1.0:
-  # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
-  skip: true  # [win or cuda_compiler_version in ("None", "11.8")]
+  skip: true  # [cuda_compiler_version in ("None", "11.8")]
   ignore_run_exports_from:
     - llvm
 
