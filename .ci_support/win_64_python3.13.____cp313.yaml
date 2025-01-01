@@ -9,7 +9,7 @@ cuda_compiler:
 cuda_compiler_version:
 - '12.6'
 cxx_compiler:
-- clangxx
+- vs2019
 libmlir:
 - '19'
 llvm:
