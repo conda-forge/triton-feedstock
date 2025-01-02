@@ -70,6 +70,7 @@ requirements:
     - pybind11
     - pip
     - setuptools
+    - llvm
     - llvmdev
     - mlir
     - zlib
