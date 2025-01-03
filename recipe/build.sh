@@ -23,5 +23,11 @@ export MAX_JOBS=$CPU_COUNT
 # no easy way of passing this, not really worth a whole patch
 sed -i -e '/TRITON_BUILD_UT/s:\bON:OFF:' CMakeLists.txt
 
+# LLVM currently does not provide a way to override the tablegen executables,
+# effectively forcing the value of MLIR_TABLEGEN_EXE obtained
+# from MLIRConfig.cmake, that corresponds to PREFIX. Overwrite it to force
+# BUILD_PREFIX.
+sed -i -e '/find_package(MLIR/aset(MLIR_TABLEGEN_EXE "$ENV{BUILD_PREFIX}/bin/mlir-tblgen")' CMakeLists.txt
+
 cd python
 $PYTHON -m pip install . -vv

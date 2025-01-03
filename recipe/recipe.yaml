@@ -6,7 +6,7 @@ context:
   # https://github.com/pytorch/pytorch/blob/v{{ pytorch_ver }}/.ci/docker/ci_commit_pins/triton.txt
   # can be found on one of those release branches, and use that as the version
   git_commit: 5fe38ffd73c2ac6ed6323b554205186696631c6f
-  build_number: 3
+  build_number: 4
 
 package:
   name: triton
@@ -48,7 +48,7 @@ build:
   # TODO: CPU-only support still under development
   # No success enabling Windows build as of 3.1.0:
   # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
-  skip: "win or cuda_compiler_version == \"None\""
+  skip: win or cuda_compiler_version in ("None", "11.8")
 
 requirements:
   build:
@@ -58,17 +58,21 @@ requirements:
     - ninja
     - cmake
     - mlir
-    - llvmdev
     - if: win
       then: m2-sed
       else: sed
+    - if: build_platform != target_platform
+      then:
+        - python
+        - cross-python_${{ target_platform }}
   host:
     - python
     - pybind11
     - pip
     - setuptools
     - llvm
-    - libmlir
+    - llvmdev
+    - mlir
     - zlib
     - nlohmann_json
     - cuda-cupti-dev
@@ -81,25 +85,27 @@ requirements:
     - cuda-cupti
 
 tests:
-  - python:
-      imports:
-        - triton
-        - triton._C.libtriton
-      pip_check: true
-  - files:
-      source:
-        - python/test/
-    requirements:
-      run:
-        - pip
-        - pytest
-        - scipy
-    script:
-      # test suite essentially depends on availability of a physical GPU,
-      # see https://github.com/openai/triton/issues/466;
-      # run a test that does not require a GPU but checks
-      # if triton.compile() works
-      - pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_ptx
+  - if: build_platform == target_platform
+    then:
+      - python:
+          imports:
+            - triton
+            - triton._C.libtriton
+          pip_check: true
+      - files:
+          source:
+            - python/test/
+        requirements:
+          run:
+            - pip
+            - pytest
+            - scipy
+        script:
+          # test suite essentially depends on availability of a physical GPU,
+          # see https://github.com/openai/triton/issues/466;
+          # run a test that does not require a GPU but checks
+          # if triton.compile() works
+          - pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_ptx
 
 about:
   license: MIT
