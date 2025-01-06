@@ -3,13 +3,13 @@ About triton-feedstock
 
 Feedstock license: [BSD-3-Clause](https://github.com/conda-forge/triton-feedstock/blob/main/LICENSE.txt)
 
-Home: https://github.com/openai/triton
+Home: https://github.com/triton-lang/triton
 
 Package license: MIT
 
 Summary: Development repository for the Triton language and compiler
 
-Development: https://github.com/openai/triton
+Development: https://github.com/triton-lang/triton
 
 Documentation: https://triton-lang.org/
 
