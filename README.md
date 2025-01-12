@@ -232,6 +232,5 @@ In order to produce a uniquely identifiable distribution:
 Feedstock Maintainers
 =====================
 
-* [@erip](https://github.com/erip/)
 * [@h-vetinari](https://github.com/h-vetinari/)
 
