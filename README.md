@@ -235,6 +235,3 @@ Feedstock Maintainers
 * [@erip](https://github.com/erip/)
 * [@h-vetinari](https://github.com/h-vetinari/)
 
-
-<!-- dummy commit to enable rerendering -->
-
