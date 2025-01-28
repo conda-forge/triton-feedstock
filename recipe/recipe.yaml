@@ -78,6 +78,7 @@ requirements:
     - zlib
     - nlohmann_json
     - cuda-cupti-dev
+    - cuda-version ${{ cuda_compiler_version }}.*
   run:
     - python
     - setuptools
