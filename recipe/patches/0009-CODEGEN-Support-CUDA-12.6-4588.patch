@@ -21,7 +21,7 @@ index 6d7994923..807775f93 100644
 -        return 80 + minor
 +        if minor < 6:
 +            return 80 + minor
-+        elif minor == 6:
++        elif minor >= 6:
 +            return 85
      if major == 11:
          return 70 + minor
