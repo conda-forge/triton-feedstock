@@ -82,7 +82,7 @@ requirements:
   run:
     - python
     - setuptools
-    - cuda-nvcc-impl
+    - cuda-nvcc-tools
     - cuda-cuobjdump
     - cuda-cudart
     - cuda-cupti
