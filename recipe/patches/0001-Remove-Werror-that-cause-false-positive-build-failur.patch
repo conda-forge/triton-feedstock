@@ -1,17 +1,17 @@
-From f5a380cc3e44affb9ce833b2a0ac9c95a4d8cae9 Mon Sep 17 00:00:00 2001
+From 322b62484110b2b27b5280ffcd99b60b934e24ad Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
 Date: Wed, 20 Nov 2024 17:17:18 +0100
-Subject: [PATCH 01/14] Remove -Werror that cause false-positive build failures
+Subject: [PATCH 1/6] Remove -Werror that cause false-positive build failures
 
 ---
  CMakeLists.txt | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8f53a2602..486e7c93f 100644
+index a892a666d..e047ca2b4 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -101,7 +101,7 @@ endfunction()
+@@ -107,7 +107,7 @@ endfunction()
  
  
  # Disable warnings that show up in external code (gtest;pybind11)
