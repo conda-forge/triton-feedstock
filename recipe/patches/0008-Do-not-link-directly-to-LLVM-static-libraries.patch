@@ -1,7 +1,7 @@
-From 37679db6f70aeca81c18c4474a07c65b09bed3ed Mon Sep 17 00:00:00 2001
+From daf4c851af405bad7b883148f83ad5918fff1910 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
 Date: Thu, 21 Nov 2024 15:02:04 +0100
-Subject: [PATCH 8/8] Do not link directly to LLVM static libraries
+Subject: [PATCH 08/14] Do not link directly to LLVM static libraries
 
 Remove direct linking to LLVM static libraries, use the shared library
 enforced by MLIR instead.  It is incorrect to simultaneously link to
@@ -65,6 +65,3 @@ index 1c8f45448..ae77e42ce 100644
 -  LLVMCodeGen
    )
  export_executable_symbols_for_plugins(triton-llvm-opt)
--- 
-2.47.0
-

@@ -1,7 +1,7 @@
-From 53df909ea734deb4490c357a6728fed3633946bd Mon Sep 17 00:00:00 2001
+From 8aa117af975612cca32ef361dac4bcaebfe9e8e9 Mon Sep 17 00:00:00 2001
 From: Florian Reichl <63750742+reichlfl@users.noreply.github.com>
 Date: Sat, 15 Jun 2024 19:28:04 +0200
-Subject: [PATCH 3/7] [BACKEND] Update LLVM version to
+Subject: [PATCH 03/14] [BACKEND] Update LLVM version to
  https://github.com/llvm/llvm-project/commit/e4790ce (#4106) (#4107)
 
 https://github.com/llvm/llvm-project/commit/e4790ce2096c805b7598c353f9e7fa513701f843
@@ -27,6 +27,3 @@ index ce4f97336..62e8667f8 100644
    auto shapedType = cast<ShapedType>(getType());
    auto ret = SplatElementsAttr::get(shapedType, ArrayRef<Attribute>(value));
    return ret;
--- 
-2.47.0
-

@@ -1,15 +1,15 @@
-From bc69e06a98e9a355d5b6a7164d28fbdd06a02eb7 Mon Sep 17 00:00:00 2001
+From affdd41e6c5aa4ff9f186b05ed5fd0d65b437782 Mon Sep 17 00:00:00 2001
 From: Mark Harfouche <mark.harfouche@gmail.com>
 Date: Sat, 11 Jan 2025 22:33:48 -0500
-Subject: [PATCH] Add conda-forge include dirs to list of include dirs during
- compilation
+Subject: [PATCH 13/14] Add conda-forge include dirs to list of include dirs
+ during compilation
 
 ---
  python/triton/runtime/build.py | 22 ++++++++++++++++++++++
  1 file changed, 22 insertions(+)
 
 diff --git a/python/triton/runtime/build.py b/python/triton/runtime/build.py
-index d7baeb2..cad427e 100644
+index d7baeb286..cad427e3f 100644
 --- a/python/triton/runtime/build.py
 +++ b/python/triton/runtime/build.py
 @@ -3,6 +3,7 @@ import sys
@@ -48,6 +48,3 @@ index d7baeb2..cad427e 100644
      cc_cmd = [cc, src, "-O3", "-shared", "-fPIC", "-o", so]
      cc_cmd += [f'-l{lib}' for lib in libraries]
      cc_cmd += [f"-L{dir}" for dir in library_dirs]
--- 
-2.43.0
-

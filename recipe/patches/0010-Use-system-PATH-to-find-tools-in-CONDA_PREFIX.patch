@@ -1,7 +1,7 @@
-From e7f10ca2067ed0c960d03e95f0a149d2f5d8dc00 Mon Sep 17 00:00:00 2001
+From a820a35f9f53032ed09fcc40680bb7a5d910ef7b Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
 Date: Tue, 26 Nov 2024 11:58:06 +0100
-Subject: [PATCH 10/10] Use system PATH to find tools (in CONDA_PREFIX)
+Subject: [PATCH 10/14] Use system PATH to find tools (in CONDA_PREFIX)
 
 ---
  python/triton/backends/compiler.py     | 2 ++
@@ -47,6 +47,3 @@ index 807775f93..cd8b6adae 100644
      ]
  
      for bin in paths:
--- 
-2.47.1
-

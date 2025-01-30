@@ -1,7 +1,7 @@
-From 4c4c6a4327508db8ca6adc0fb01fdb6ec16572ff Mon Sep 17 00:00:00 2001
+From f79905e942dd9dc1cbc42fe4501540c93ef0f985 Mon Sep 17 00:00:00 2001
 From: Cunshun Xia <505481172@qq.com>
 Date: Fri, 19 Jul 2024 23:11:15 +0800
-Subject: [PATCH 12/12] remove unused requirement 'filelock' (#4356)
+Subject: [PATCH 12/14] remove unused requirement 'filelock' (#4356)
 
 The core Triton is a small number of people, and we receive many PRs
 (thank
@@ -66,6 +66,3 @@ index da924502b..30c317328 100644
      package_data=package_data,
      include_package_data=True,
      ext_modules=[CMakeExtension("triton", "triton/_C/")],
--- 
-2.47.1
-

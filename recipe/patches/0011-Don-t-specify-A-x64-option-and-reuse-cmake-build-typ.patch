@@ -1,7 +1,7 @@
-From 95b7ae2159e6a61cf960c8d9efd631ab2e0b6e35 Mon Sep 17 00:00:00 2001
+From 81852b0a279ab38903caab7f1961339ec79d4826 Mon Sep 17 00:00:00 2001
 From: Anatoly Myachev <anatoly.myachev@intel.com>
 Date: Wed, 30 Oct 2024 14:56:52 +0100
-Subject: [PATCH 11/11] Don't specify `-A x64` option and reuse cmake build
+Subject: [PATCH 11/14] Don't specify `-A x64` option and reuse cmake build
  type config for Windows (#5014)
 
 The `-A` argument is not compatible with the Ninja generator.
@@ -29,6 +29,3 @@ index c60dc6158..da924502b 100644
              max_jobs = os.getenv("MAX_JOBS", str(2 * os.cpu_count()))
              build_args += ['-j' + max_jobs]
  
--- 
-2.47.1
-
