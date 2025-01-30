@@ -1,7 +1,7 @@
-From da416f557317a3de6a10630c325932a041c1e3d7 Mon Sep 17 00:00:00 2001
+From 8ab1a773031609626c768bcc5e1b8d0a2d7684e6 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
 Date: Wed, 20 Nov 2024 20:44:03 +0100
-Subject: [PATCH 7/7] Update config.enableRegionSimplification for LLVM 19
+Subject: [PATCH 07/14] Update config.enableRegionSimplification for LLVM 19
 
 Copy the new config.enableRegionSimplification value as present
 in the main branch of triton.
@@ -22,6 +22,3 @@ index 9a9a4b14b..131285a5a 100644
  
      RewritePatternSet patterns(context);
      patterns.add<CallOpConversion>(context);
--- 
-2.47.0
-

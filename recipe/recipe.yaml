@@ -43,6 +43,8 @@ source:
     - patches/0012-remove-unused-requirement-filelock-4356.patch
     # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
     - patches/0013-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
+    # backport https://github.com/triton-lang/triton/pull/5765
+    - patches/0014-release-3.2.x-Get-proper-PTX-version-for-CUDA-12.6.patch
 
 build:
   number: ${{ build_number }}

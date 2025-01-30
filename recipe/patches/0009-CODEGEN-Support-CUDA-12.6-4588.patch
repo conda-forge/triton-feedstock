@@ -1,7 +1,7 @@
-From 2b7c9075640d7909d8e07c0e8fd1cef867df1af5 Mon Sep 17 00:00:00 2001
+From 5e39ca3e6add84633ea4074be365c1ed193e52a2 Mon Sep 17 00:00:00 2001
 From: Keren Zhou <kerenzhou@openai.com>
 Date: Tue, 27 Aug 2024 11:36:38 -0400
-Subject: [PATCH 9/9] [CODEGEN] Support CUDA 12.6 (#4588)
+Subject: [PATCH 09/14] [CODEGEN] Support CUDA 12.6 (#4588)
 
 According to the
 [table](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#release-notes-ptx-release-history),
@@ -21,7 +21,7 @@ index 6d7994923..807775f93 100644
 -        return 80 + minor
 +        if minor < 6:
 +            return 80 + minor
-+        elif minor >= 6:
++        elif minor == 6:
 +            return 85
      if major == 11:
          return 70 + minor
@@ -32,6 +32,3 @@ index 6d7994923..807775f93 100644
  
  
  @functools.lru_cache(None)
--- 
-2.47.1
-

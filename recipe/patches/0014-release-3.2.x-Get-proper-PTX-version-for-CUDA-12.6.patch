@@ -1,0 +1,25 @@
+From ef740298a2dd1688875d12e9db48357bc3618a12 Mon Sep 17 00:00:00 2001
+From: Bert Maher <bertrand@fb.com>
+Date: Thu, 30 Jan 2025 11:46:36 -0800
+Subject: [PATCH 14/14] [release/3.2.x] Get proper PTX version for CUDA >= 12.6
+
+Fixes #5737
+---
+ third_party/nvidia/backend/compiler.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/third_party/nvidia/backend/compiler.py b/third_party/nvidia/backend/compiler.py
+index cd8b6adae..8be36be12 100644
+--- a/third_party/nvidia/backend/compiler.py
++++ b/third_party/nvidia/backend/compiler.py
+@@ -48,8 +48,8 @@ def ptx_get_version(cuda_version) -> int:
+     if major == 12:
+         if minor < 6:
+             return 80 + minor
+-        elif minor == 6:
+-            return 85
++        else:
++            return 80 + minor - 1
+     if major == 11:
+         return 70 + minor
+     if major == 10:

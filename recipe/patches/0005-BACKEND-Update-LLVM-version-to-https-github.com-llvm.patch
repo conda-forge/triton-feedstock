@@ -1,7 +1,7 @@
-From f90e390dbbe19d3f54693a71450fe05f730a3940 Mon Sep 17 00:00:00 2001
+From e40cca93220a56ecc99cab6b860987abf5f90bf7 Mon Sep 17 00:00:00 2001
 From: Goran Flegar <gflegar@google.com>
 Date: Thu, 18 Jul 2024 19:36:10 +0200
-Subject: [PATCH 5/7] [BACKEND] Update LLVM version to
+Subject: [PATCH 05/14] [BACKEND] Update LLVM version to
  https://github.com/llvm/llvm-project/commit/4e0a0eae58f7a6998866719f7eb970096a2a52e9
  (#4212)
 
@@ -163,6 +163,3 @@ index 0b06ee643..33edf7286 100644
                         mlir::triton::gpu::SharedMemory::get());
  }
  
--- 
-2.47.0
-

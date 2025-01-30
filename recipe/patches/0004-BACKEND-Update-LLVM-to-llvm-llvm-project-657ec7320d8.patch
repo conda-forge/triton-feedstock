@@ -1,7 +1,7 @@
-From fdf74ff5cbf10297e0dc63f5b9dfc8c3ef14acad Mon Sep 17 00:00:00 2001
+From a01f2bba151ddae8dd0671cb784a885d9f3b0909 Mon Sep 17 00:00:00 2001
 From: Giuseppe Rossini <giuseppe.rossini@amd.com>
 Date: Wed, 19 Jun 2024 16:54:49 +0100
-Subject: [PATCH 4/7] [BACKEND] Update LLVM  to llvm/llvm-project@657ec7320d8a
+Subject: [PATCH 04/14] [BACKEND] Update LLVM to llvm/llvm-project@657ec7320d8a
  (#4147)
 
 Upgrading LLVM repo again, because we need a feature that has been
@@ -53,6 +53,3 @@ index ea4579e3e..f2c3a0f8e 100644
        disable_threading: false,
        verify_each: false
      }
--- 
-2.47.0
-
