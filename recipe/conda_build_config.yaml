@@ -1,8 +1,11 @@
 llvmdev:
-  - 19
+  - 20
 llvm:
-  - 19
+  - 20
 mlir:
-  - 19
+  - 20
 libmlir:
-  - 19
+  - 20
+
+channel_sources:
+  - conda-forge/label/llvm_rc,conda-forge
