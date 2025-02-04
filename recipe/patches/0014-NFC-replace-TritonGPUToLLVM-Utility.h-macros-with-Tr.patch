@@ -1,4 +1,4 @@
-From c520dabe40ccbc050ab3da932c6537c2050fd43a Mon Sep 17 00:00:00 2001
+From cdc4eaa1fd80b67dc6f75049e8bc6aa18f8ac78c Mon Sep 17 00:00:00 2001
 From: Maksim Levental <maksim.levental@gmail.com>
 Date: Tue, 28 Jan 2025 13:45:21 -0600
 Subject: [PATCH 14/15] [NFC] replace TritonGPUToLLVM/Utility.h macros with
@@ -1085,7 +1085,7 @@ index 8d5a63eb1..1e6199363 100644
          newOp = rewriter.create<LLVM::ReturnOp>(op.getLoc(), packedResults);
        }
 diff --git a/lib/Conversion/TritonGPUToLLVM/ConvertLayoutOpToLLVM.cpp b/lib/Conversion/TritonGPUToLLVM/ConvertLayoutOpToLLVM.cpp
-index a18b2cbc3..7b0e88abf 100644
+index a18b2cbc3..f151eff03 100644
 --- a/lib/Conversion/TritonGPUToLLVM/ConvertLayoutOpToLLVM.cpp
 +++ b/lib/Conversion/TritonGPUToLLVM/ConvertLayoutOpToLLVM.cpp
 @@ -69,6 +69,7 @@ private:
@@ -1165,7 +1165,7 @@ index a18b2cbc3..7b0e88abf 100644
                                      ConversionPatternRewriter &rewriter) const {
      MLIRContext *ctx = op.getContext();
      auto loc = op.getLoc();
-+    auto b = TritonLLVMOpBuilder(loc, rewriter);
++    auto tb = TritonLLVMOpBuilder(loc, rewriter);
      auto srcTy = op.getSrc().getType();
      auto dstTy = op.getType();
  
@@ -1174,10 +1174,10 @@ index a18b2cbc3..7b0e88abf 100644
      for (const auto &it : llvm::enumerate(inVals)) {
        if (isSubByteInt) {
 -        inVals[it.index()] = zext(llvmElemTy, it.value());
-+        inVals[it.index()] = b.zext(llvmElemTy, it.value());
++        inVals[it.index()] = tb.zext(llvmElemTy, it.value());
        } else if (isPtr) {
 -        inVals[it.index()] = ptrtoint(llvmElemTy, it.value());
-+        inVals[it.index()] = b.ptrtoint(llvmElemTy, it.value());
++        inVals[it.index()] = tb.ptrtoint(llvmElemTy, it.value());
        }
      }
  
@@ -1186,10 +1186,10 @@ index a18b2cbc3..7b0e88abf 100644
      for (const auto &it : llvm::enumerate(outVals)) {
        if (isSubByteInt) {
 -        outVals[it.index()] = trunc(llvmElemTyOrig, it.value());
-+        outVals[it.index()] = b.trunc(llvmElemTyOrig, it.value());
++        outVals[it.index()] = tb.trunc(llvmElemTyOrig, it.value());
        } else if (isPtr) {
 -        outVals[it.index()] = inttoptr(llvmElemTyOrig, it.value());
-+        outVals[it.index()] = b.inttoptr(llvmElemTyOrig, it.value());
++        outVals[it.index()] = tb.inttoptr(llvmElemTyOrig, it.value());
        }
      }
  
@@ -1199,8 +1199,8 @@ index a18b2cbc3..7b0e88abf 100644
        auto concat = [&](Value a, Value b) {
 -        return or_(zext(i32_ty, bitcast(a, i16_ty)),
 -                   shl(zext(i32_ty, bitcast(b, i16_ty)), i32_val(16)));
-+        return b.or_(b.zext(i32_ty, b.bitcast(a, i16_ty)),
-+                     b.shl(b.zext(i32_ty, b.bitcast(b, i16_ty)), b.i32_val(16)));
++        return tb.or_(tb.zext(i32_ty, tb.bitcast(a, i16_ty)),
++                      tb.shl(tb.zext(i32_ty, tb.bitcast(b, i16_ty)), tb.i32_val(16)));
        };
  
        SmallVector<Value> outVals32(outVals.size() / 2);
@@ -1750,17 +1750,17 @@ index 43120c791..8060b4431 100644
      auto typeConverter = getTypeConverter();
      Value result = packLLElements(loc, typeConverter, retVals, rewriter, ty);
 diff --git a/lib/Conversion/TritonGPUToLLVM/MemoryOpToLLVM.cpp b/lib/Conversion/TritonGPUToLLVM/MemoryOpToLLVM.cpp
-index 1a0c115a9..1f3a714dc 100644
+index 1a0c115a9..127998fca 100644
 --- a/lib/Conversion/TritonGPUToLLVM/MemoryOpToLLVM.cpp
 +++ b/lib/Conversion/TritonGPUToLLVM/MemoryOpToLLVM.cpp
-@@ -166,6 +166,7 @@ private:
-   lowerSharedToDistributed(LocalLoadOp op, LocalLoadOpAdaptor adaptor,
+@@ -167,6 +167,7 @@ private:
                             const LLVMTypeConverter *typeConverter,
                             ConversionPatternRewriter &rewriter) const {
-+    auto b = TritonLLVMOpBuilder(loc, rewriter);
      auto loc = op.getLoc();
++    auto tb = TritonLLVMOpBuilder(loc, rewriter);
      auto srcTy = op.getSrc().getType();
      auto dstTy = op.getResult().getType();
+     auto dstShape = dstTy.getShape();
 @@ -192,10 +193,10 @@ private:
          if (parent.isAmpere()) {
            if (elemLlvmTy.isInteger(8)) {
@@ -1769,10 +1769,10 @@ index 1a0c115a9..1f3a714dc 100644
 -                  or_(zext(i32_ty, a1), shl(zext(i32_ty, a2), i32_val(8))),
 -                  or_(shl(zext(i32_ty, a3), i32_val(16)),
 -                      shl(zext(i32_ty, a4), i32_val(24))));
-+              return b.or_(
-+                  b.or_(b.zext(i32_ty, a1), b.shl(b.zext(i32_ty, a2), b.i32_val(8))),
-+                  b.or_(b.shl(b.zext(i32_ty, a3), b.i32_val(16)),
-+                        b.shl(b.zext(i32_ty, a4), b.i32_val(24))));
++              return tb.or_(
++                  tb.or_(tb.zext(i32_ty, a1), tb.shl(tb.zext(i32_ty, a2), tb.i32_val(8))),
++                  tb.or_(tb.shl(tb.zext(i32_ty, a3), tb.i32_val(16)),
++                         tb.shl(tb.zext(i32_ty, a4), tb.i32_val(24))));
              };
              SmallVector<Value> outVals32(outVals.size() / 4);
              for (int i = 0; i < outVals32.size(); ++i) {
@@ -1782,8 +1782,8 @@ index 1a0c115a9..1f3a714dc 100644
              auto concat = [&](Value a, Value b) {
 -              return or_(zext(i32_ty, bitcast(a, i16_ty)),
 -                         shl(zext(i32_ty, bitcast(b, i16_ty)), i32_val(16)));
-+              return b.or_(b.zext(i32_ty, b.bitcast(a, i16_ty)),
-+                           b.shl(b.zext(i32_ty, b.bitcast(b, i16_ty)), b.i32_val(16)));
++              return tb.or_(tb.zext(i32_ty, tb.bitcast(a, i16_ty)),
++                            tb.shl(tb.zext(i32_ty, tb.bitcast(b, i16_ty)), tb.i32_val(16)));
              };
  
              SmallVector<Value> outVals32(outVals.size() / 2);
