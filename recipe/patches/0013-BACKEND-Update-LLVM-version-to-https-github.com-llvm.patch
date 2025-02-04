@@ -1,7 +1,7 @@
 From c7acbd466b64cf2a57cbfdf211e120611ad5de4d Mon Sep 17 00:00:00 2001
 From: Goran Flegar <gflegar@google.com>
 Date: Wed, 22 Jan 2025 17:00:17 +0100
-Subject: [PATCH 13/15] [BACKEND] Update LLVM version to
+Subject: [PATCH 13/16] [BACKEND] Update LLVM version to
  https://github.com/llvm/llvm-project/commit/e2402615a5a76d46a433dfcc1de10b38a1263c9d
  (#5667)
 

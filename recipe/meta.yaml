@@ -35,6 +35,8 @@ source:
     - patches/0013-BACKEND-Update-LLVM-version-to-https-github.com-llvm.patch
     - patches/0014-NFC-replace-TritonGPUToLLVM-Utility.h-macros-with-Tr.patch
     - patches/0015-BACKEND-bump-to-llvm-llvm-project-c118864223c6-5684.patch
+    # backport https://github.com/triton-lang/triton/pull/5492
+    - patches/0016-NFC-Remove-dependency-to-cuda-headers-in-Triton-buil.patch
 
 build:
   number: {{ build_number }}
