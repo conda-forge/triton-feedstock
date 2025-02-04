@@ -51,7 +51,7 @@ requirements:
     - ${{ stdlib('c') }}
     - ninja
     - cmake
-    - mlir
+    - conda-forge/label/llvm_rc::mlir
     - if: win
       then: m2-sed
       else: sed
@@ -64,9 +64,9 @@ requirements:
     - pybind11
     - pip
     - setuptools
-    - llvm
-    - llvmdev
-    - mlir
+    - conda-forge/label/llvm_rc::llvm
+    - conda-forge/label/llvm_rc::llvmdev
+    - conda-forge/label/llvm_rc::mlir
     - zlib
     - nlohmann_json
     - cuda-cupti-dev
