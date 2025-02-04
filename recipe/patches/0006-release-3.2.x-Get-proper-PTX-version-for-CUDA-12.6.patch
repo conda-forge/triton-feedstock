@@ -1,7 +1,7 @@
 From 24863afd326b48714ec39a0fc6b4a8cb01c1a6e2 Mon Sep 17 00:00:00 2001
 From: Bert Maher <bertrand@fb.com>
 Date: Thu, 30 Jan 2025 11:46:36 -0800
-Subject: [PATCH 6/6] [release/3.2.x] Get proper PTX version for CUDA >= 12.6
+Subject: [PATCH 06/14] [release/3.2.x] Get proper PTX version for CUDA >= 12.6
 
 Fixes #5737
 ---

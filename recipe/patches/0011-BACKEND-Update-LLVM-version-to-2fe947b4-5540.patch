@@ -1,0 +1,19 @@
+From 0019f953e3d7b3665ea294bf28850e8fa2496374 Mon Sep 17 00:00:00 2001
+From: Maksim Levental <maksim.levental@gmail.com>
+Date: Mon, 13 Jan 2025 13:18:32 -0500
+Subject: [PATCH 11/14] [BACKEND] Update LLVM version to 2fe947b4 (#5540)
+
+The only change here is due to deprecation of `applyPatternsAndFoldGreedily`.
+
+Note, the is the last commit before llvm/llvm-project#115946 which leads to IMAs.
+---
+ cmake/llvm-hash.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/llvm-hash.txt b/cmake/llvm-hash.txt
+index 50d024794..97e2da4c7 100644
+--- a/cmake/llvm-hash.txt
++++ b/cmake/llvm-hash.txt
+@@ -1 +1 @@
+-86b69c31642e98f8357df62c09d118ad1da4e16a
++2fe947b47798de1ad20553be4e162e332428ad91

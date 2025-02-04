@@ -1,0 +1,254 @@
+From 6a754779db49c2d2ee6647980095702aed311607 Mon Sep 17 00:00:00 2001
+From: Maksim Levental <maksim.levental@gmail.com>
+Date: Tue, 21 Jan 2025 17:26:49 -0600
+Subject: [PATCH 12/14] [BACKEND] bump llvm to 2f7ade4b (#5599)
+
+https://github.com/llvm/llvm-project/commit/066b88879ab5c195e7e14609e546cc238c2f3bf3
+fixes the CUDA illegal memory access error (Tested on A100).
+---
+ cmake/llvm-hash.txt                                           | 2 +-
+ lib/Dialect/Triton/Transforms/Combine.cpp                     | 2 +-
+ lib/Dialect/Triton/Transforms/ReorderBroadcast.cpp            | 2 +-
+ lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp         | 2 +-
+ lib/Dialect/TritonGPU/Transforms/F32DotTC.cpp                 | 3 +--
+ lib/Dialect/TritonGPU/Transforms/OptimizeDotOperands.cpp      | 2 +-
+ lib/Dialect/TritonGPU/Transforms/OptimizeThreadLocality.cpp   | 2 +-
+ .../TritonGPU/Transforms/Pipeliner/SoftwarePipeliner.cpp      | 3 +--
+ lib/Dialect/TritonGPU/Transforms/Prefetch.cpp                 | 3 +--
+ lib/Dialect/TritonGPU/Transforms/RemoveLayoutConversions.cpp  | 4 ++--
+ lib/Dialect/TritonNvidiaGPU/Transforms/TMALowering.cpp        | 2 +-
+ third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp  | 2 +-
+ .../amd/lib/TritonAMDGPUTransforms/AccelerateAMDMatmul.cpp    | 2 +-
+ .../amd/lib/TritonAMDGPUTransforms/ConvertToBufferOps.cpp     | 2 +-
+ .../amd/lib/TritonAMDGPUTransforms/OptimizeEpilogue.cpp       | 2 +-
+ third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp        | 2 +-
+ .../TritonNVIDIAGPUToLLVM/DecomposeUnsupportedConversions.cpp | 2 +-
+ 17 files changed, 18 insertions(+), 21 deletions(-)
+
+diff --git a/cmake/llvm-hash.txt b/cmake/llvm-hash.txt
+index 97e2da4c7..ef3cafa3b 100644
+--- a/cmake/llvm-hash.txt
++++ b/cmake/llvm-hash.txt
+@@ -1 +1 @@
+-2fe947b47798de1ad20553be4e162e332428ad91
++2f7ade4b5e399962e18f5f9a0ab0b7335deece51
+diff --git a/lib/Dialect/Triton/Transforms/Combine.cpp b/lib/Dialect/Triton/Transforms/Combine.cpp
+index 33c4516b4..cb1ffa195 100644
+--- a/lib/Dialect/Triton/Transforms/Combine.cpp
++++ b/lib/Dialect/Triton/Transforms/Combine.cpp
+@@ -234,7 +234,7 @@ public:
+     patterns.add<CombineBroadcastConstantPattern>(context);
+     patterns.add<CombineBroadcastMulReducePattern>(context);
+ 
+-    if (applyPatternsAndFoldGreedily(m, std::move(patterns)).failed())
++    if (applyPatternsGreedily(m, std::move(patterns)).failed())
+       signalPassFailure();
+   }
+ };
+diff --git a/lib/Dialect/Triton/Transforms/ReorderBroadcast.cpp b/lib/Dialect/Triton/Transforms/ReorderBroadcast.cpp
+index 43479a3d9..e88d8bf53 100644
+--- a/lib/Dialect/Triton/Transforms/ReorderBroadcast.cpp
++++ b/lib/Dialect/Triton/Transforms/ReorderBroadcast.cpp
+@@ -233,7 +233,7 @@ public:
+     // elementwise(splat(a), splat(b), ...) => splat(elementwise(a, b, ...))
+     patterns.add<MoveSplatAfterElementwisePattern>(context);
+ 
+-    if (applyPatternsAndFoldGreedily(m, std::move(patterns)).failed())
++    if (applyPatternsGreedily(m, std::move(patterns)).failed())
+       signalPassFailure();
+   }
+ };
+diff --git a/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp b/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
+index a2d4012bf..85aaa547c 100644
+--- a/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
++++ b/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
+@@ -551,7 +551,7 @@ public:
+     mlir::RewritePatternSet patterns(context);
+     patterns.add<BlockedToMMA, ScaledBlockedToMMAv2>(context,
+                                                      computeCapability);
+-    if (applyPatternsAndFoldGreedily(m, std::move(patterns)).failed()) {
++    if (applyPatternsGreedily(m, std::move(patterns)).failed()) {
+       signalPassFailure();
+     }
+     // Now that we have picked the mma type, decompose dot that are not natively
+diff --git a/lib/Dialect/TritonGPU/Transforms/F32DotTC.cpp b/lib/Dialect/TritonGPU/Transforms/F32DotTC.cpp
+index d9fb1d7e1..ed617ce3d 100644
+--- a/lib/Dialect/TritonGPU/Transforms/F32DotTC.cpp
++++ b/lib/Dialect/TritonGPU/Transforms/F32DotTC.cpp
+@@ -91,8 +91,7 @@ struct F32DotTCPass : public impl::TritonGPUF32DotTCBase<F32DotTCPass> {
+ 
+     RewritePatternSet decomposePatterns(context);
+     decomposePatterns.add<TF32x3>(context);
+-    if (applyPatternsAndFoldGreedily(m, std::move(decomposePatterns))
+-            .failed()) {
++    if (applyPatternsGreedily(m, std::move(decomposePatterns)).failed()) {
+       signalPassFailure();
+     }
+   }
+diff --git a/lib/Dialect/TritonGPU/Transforms/OptimizeDotOperands.cpp b/lib/Dialect/TritonGPU/Transforms/OptimizeDotOperands.cpp
+index 6d8279795..99cff25a6 100644
+--- a/lib/Dialect/TritonGPU/Transforms/OptimizeDotOperands.cpp
++++ b/lib/Dialect/TritonGPU/Transforms/OptimizeDotOperands.cpp
+@@ -327,7 +327,7 @@ public:
+     patterns.add<FuseTransHopper>(context);
+     patterns.add<MMAV3UseRegOperand>(context);
+     ConvertLayoutOp::getCanonicalizationPatterns(patterns, context);
+-    if (failed(applyPatternsAndFoldGreedily(m, std::move(patterns))))
++    if (failed(applyPatternsGreedily(m, std::move(patterns))))
+       signalPassFailure();
+   }
+ };
+diff --git a/lib/Dialect/TritonGPU/Transforms/OptimizeThreadLocality.cpp b/lib/Dialect/TritonGPU/Transforms/OptimizeThreadLocality.cpp
+index b0e5095ac..f2c81349c 100644
+--- a/lib/Dialect/TritonGPU/Transforms/OptimizeThreadLocality.cpp
++++ b/lib/Dialect/TritonGPU/Transforms/OptimizeThreadLocality.cpp
+@@ -101,7 +101,7 @@ class TritonGPUOptimizeThreadLocalityPass
+     // First try to optimize the layout of existing views.
+     mlir::RewritePatternSet viewLayoutPatterns(&getContext());
+     viewLayoutPatterns.add<OptimizeReshapeLayoutPattern>(&getContext());
+-    if (mlir::applyPatternsAndFoldGreedily(mod, std::move(viewLayoutPatterns))
++    if (mlir::applyPatternsGreedily(mod, std::move(viewLayoutPatterns))
+             .failed()) {
+       signalPassFailure();
+     }
+diff --git a/lib/Dialect/TritonGPU/Transforms/Pipeliner/SoftwarePipeliner.cpp b/lib/Dialect/TritonGPU/Transforms/Pipeliner/SoftwarePipeliner.cpp
+index 8766e82b9..f7bb78993 100644
+--- a/lib/Dialect/TritonGPU/Transforms/Pipeliner/SoftwarePipeliner.cpp
++++ b/lib/Dialect/TritonGPU/Transforms/Pipeliner/SoftwarePipeliner.cpp
+@@ -136,8 +136,7 @@ struct PipelinePass : public impl::TritonGPUPipelineBase<PipelinePass> {
+         getOperation().getContext()->getLoadedDialect<arith::ArithDialect>();
+     RewritePatternSet patterns(getOperation().getContext());
+     arithDialect->getCanonicalizationPatterns(patterns);
+-    if (applyPatternsAndFoldGreedily(getOperation(), std::move(patterns))
+-            .failed())
++    if (applyPatternsGreedily(getOperation(), std::move(patterns)).failed())
+       return signalPassFailure();
+ 
+     // Try to pipeline the outer loop to overlap the prologue and epilogue of
+diff --git a/lib/Dialect/TritonGPU/Transforms/Prefetch.cpp b/lib/Dialect/TritonGPU/Transforms/Prefetch.cpp
+index 2cbc00142..f6622228b 100644
+--- a/lib/Dialect/TritonGPU/Transforms/Prefetch.cpp
++++ b/lib/Dialect/TritonGPU/Transforms/Prefetch.cpp
+@@ -421,8 +421,7 @@ struct PrefetchPass : public impl::TritonGPUPrefetchBase<PrefetchPass> {
+     RewritePatternSet cleanUpPatterns(&getContext());
+     triton::gpu::ConvertLayoutOp::getCanonicalizationPatterns(cleanUpPatterns,
+                                                               &getContext());
+-    if (mlir::applyPatternsAndFoldGreedily(getOperation(),
+-                                           std::move(cleanUpPatterns))
++    if (mlir::applyPatternsGreedily(getOperation(), std::move(cleanUpPatterns))
+             .failed()) {
+       signalPassFailure();
+     }
+diff --git a/lib/Dialect/TritonGPU/Transforms/RemoveLayoutConversions.cpp b/lib/Dialect/TritonGPU/Transforms/RemoveLayoutConversions.cpp
+index cee1ae84e..4fdc67088 100644
+--- a/lib/Dialect/TritonGPU/Transforms/RemoveLayoutConversions.cpp
++++ b/lib/Dialect/TritonGPU/Transforms/RemoveLayoutConversions.cpp
+@@ -1139,7 +1139,7 @@ public:
+ 
+     RewritePatternSet cleanUpPatterns(context);
+     ConvertLayoutOp::getCanonicalizationPatterns(cleanUpPatterns, context);
+-    if (applyPatternsAndFoldGreedily(m, std::move(cleanUpPatterns)).failed()) {
++    if (applyPatternsGreedily(m, std::move(cleanUpPatterns)).failed()) {
+       signalPassFailure();
+     }
+ 
+@@ -1171,7 +1171,7 @@ public:
+     scf::ForOp::getCanonicalizationPatterns(cleanUpPatterns2, context);
+     scf::IfOp::getCanonicalizationPatterns(cleanUpPatterns2, context);
+     ConvertLayoutOp::getCanonicalizationPatterns(cleanUpPatterns2, context);
+-    if (applyPatternsAndFoldGreedily(m, std::move(cleanUpPatterns2)).failed()) {
++    if (applyPatternsGreedily(m, std::move(cleanUpPatterns2)).failed()) {
+       signalPassFailure();
+     }
+     LLVM_DEBUG({
+diff --git a/lib/Dialect/TritonNvidiaGPU/Transforms/TMALowering.cpp b/lib/Dialect/TritonNvidiaGPU/Transforms/TMALowering.cpp
+index 0938432c7..58c3cb859 100644
+--- a/lib/Dialect/TritonNvidiaGPU/Transforms/TMALowering.cpp
++++ b/lib/Dialect/TritonNvidiaGPU/Transforms/TMALowering.cpp
+@@ -111,7 +111,7 @@ public:
+ 
+     mlir::RewritePatternSet patterns(context);
+     patterns.add<TMALoadLowering, TMAStoreLowering>(context);
+-    if (applyPatternsAndFoldGreedily(m, std::move(patterns)).failed())
++    if (applyPatternsGreedily(m, std::move(patterns)).failed())
+       signalPassFailure();
+   }
+ };
+diff --git a/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp b/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp
+index 409d14774..241a2f319 100644
+--- a/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp
++++ b/third_party/amd/lib/TritonAMDGPUToLLVM/BuiltinFuncToLLVM.cpp
+@@ -235,7 +235,7 @@ struct ConvertBuiltinFuncToLLVM
+     RewritePatternSet patterns(context);
+     patterns.add<CallOpConversion>(context, this->ftz);
+ 
+-    if (mlir::applyPatternsAndFoldGreedily(mod, std::move(patterns), config)
++    if (mlir::applyPatternsGreedily(mod, std::move(patterns), config)
+             .failed()) {
+       signalPassFailure();
+     }
+diff --git a/third_party/amd/lib/TritonAMDGPUTransforms/AccelerateAMDMatmul.cpp b/third_party/amd/lib/TritonAMDGPUTransforms/AccelerateAMDMatmul.cpp
+index 6f93bfee9..a7da37dd5 100644
+--- a/third_party/amd/lib/TritonAMDGPUTransforms/AccelerateAMDMatmul.cpp
++++ b/third_party/amd/lib/TritonAMDGPUTransforms/AccelerateAMDMatmul.cpp
+@@ -700,7 +700,7 @@ public:
+     default:
+       break;
+     }
+-    if (applyPatternsAndFoldGreedily(m, std::move(patterns)).failed()) {
++    if (applyPatternsGreedily(m, std::move(patterns)).failed()) {
+       signalPassFailure();
+     }
+     decomposeMixedModeDotOp(m);
+diff --git a/third_party/amd/lib/TritonAMDGPUTransforms/ConvertToBufferOps.cpp b/third_party/amd/lib/TritonAMDGPUTransforms/ConvertToBufferOps.cpp
+index f1d922041..823119762 100644
+--- a/third_party/amd/lib/TritonAMDGPUTransforms/ConvertToBufferOps.cpp
++++ b/third_party/amd/lib/TritonAMDGPUTransforms/ConvertToBufferOps.cpp
+@@ -250,7 +250,7 @@ public:
+ 
+     patterns.add<ConvertTritonLoadToBufferLoad>(context, assumptions);
+     patterns.add<ConvertTritonStoreToBufferStore>(context, assumptions);
+-    if (applyPatternsAndFoldGreedily(m, std::move(patterns)).failed())
++    if (applyPatternsGreedily(m, std::move(patterns)).failed())
+       signalPassFailure();
+   }
+ };
+diff --git a/third_party/amd/lib/TritonAMDGPUTransforms/OptimizeEpilogue.cpp b/third_party/amd/lib/TritonAMDGPUTransforms/OptimizeEpilogue.cpp
+index f2818297f..8c5358c58 100644
+--- a/third_party/amd/lib/TritonAMDGPUTransforms/OptimizeEpilogue.cpp
++++ b/third_party/amd/lib/TritonAMDGPUTransforms/OptimizeEpilogue.cpp
+@@ -179,7 +179,7 @@ public:
+ 
+     patterns.add<BypassEpilogueSMEM>(context);
+ 
+-    if (applyPatternsAndFoldGreedily(m, std::move(patterns)).failed()) {
++    if (applyPatternsGreedily(m, std::move(patterns)).failed()) {
+       signalPassFailure();
+     }
+   }
+diff --git a/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp b/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp
+index 8de0efefc..78caf012c 100644
+--- a/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp
++++ b/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp
+@@ -519,7 +519,7 @@ public:
+              ClusterArriveOpPattern, WGMMAOpPattern, WGMMAWaitGroupOpPattern>(
+             context);
+ 
+-    if (applyPatternsAndFoldGreedily(mod, std::move(patterns)).failed())
++    if (applyPatternsGreedily(mod, std::move(patterns)).failed())
+       signalPassFailure();
+   }
+ };
+diff --git a/third_party/nvidia/lib/TritonNVIDIAGPUToLLVM/DecomposeUnsupportedConversions.cpp b/third_party/nvidia/lib/TritonNVIDIAGPUToLLVM/DecomposeUnsupportedConversions.cpp
+index cf0ddc248..5360377ae 100644
+--- a/third_party/nvidia/lib/TritonNVIDIAGPUToLLVM/DecomposeUnsupportedConversions.cpp
++++ b/third_party/nvidia/lib/TritonNVIDIAGPUToLLVM/DecomposeUnsupportedConversions.cpp
+@@ -78,7 +78,7 @@ struct DecomposeUnsupportedConversions
+ 
+     mlir::RewritePatternSet patterns(&getContext());
+     patterns.add<DecomposeLocalLoadToDotOperand>(&getContext());
+-    if (mlir::applyPatternsAndFoldGreedily(mod, std::move(patterns)).failed()) {
++    if (mlir::applyPatternsGreedily(mod, std::move(patterns)).failed()) {
+       signalPassFailure();
+     }
+   }
