@@ -1,4 +1,4 @@
-From c846520759128e09260f8424540d7aaac69d6066 Mon Sep 17 00:00:00 2001
+From f6393efc1242ced009d2e6606512f3e65662fa44 Mon Sep 17 00:00:00 2001
 From: Goran Flegar <gflegar@google.com>
 Date: Wed, 22 Jan 2025 17:00:17 +0100
 Subject: [PATCH 13/14] [BACKEND] Update LLVM version to
@@ -12,10 +12,11 @@ to `cast<T>`.
  cmake/llvm-hash.txt                                    | 2 +-
  include/triton/Conversion/MLIRTypes.h                  | 8 ++++----
  include/triton/Dialect/Triton/IR/TritonOps.td          | 2 +-
+ lib/Dialect/TritonGPU/IR/Ops.cpp                       | 4 ++--
  third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp | 4 ++--
  unittest/Dialect/TritonGPU/DialectTest.cpp             | 6 +++---
  unittest/Dialect/TritonGPU/DumpLayoutTest.cpp          | 6 +++---
- 6 files changed, 14 insertions(+), 14 deletions(-)
+ 7 files changed, 16 insertions(+), 16 deletions(-)
 
 diff --git a/cmake/llvm-hash.txt b/cmake/llvm-hash.txt
 index ef3cafa3b..e793a5b69 100644
@@ -56,6 +57,28 @@ index 283dd9165..b6b875f16 100644
      }
  
      // Required by CallOpInterface.
+diff --git a/lib/Dialect/TritonGPU/IR/Ops.cpp b/lib/Dialect/TritonGPU/IR/Ops.cpp
+index e61fe096e..9a29ea97f 100644
+--- a/lib/Dialect/TritonGPU/IR/Ops.cpp
++++ b/lib/Dialect/TritonGPU/IR/Ops.cpp
+@@ -17,7 +17,7 @@ LogicalResult UpcastMXFPOp::verify() {
+   auto xTy = getSrc().getType();
+   auto scaleTy = getScale().getType();
+ 
+-  if (xTy.getElementType() != FloatType::getBF16(getContext()) &&
++  if (xTy.getElementType() != BFloat16Type::get(getContext()) &&
+       xTy.getElementType() != IntegerType::get(getContext(), 8)) {
+     return emitOpError("element type of the first operand must be bf16 or i8");
+   }
+@@ -97,7 +97,7 @@ LogicalResult UpcastMXFPOp::inferReturnTypes(
+     auto newShape = SmallVector<int64_t>(xShape);
+     newShape.back() *= 2;
+     inferredReturnTypes.push_back(
+-        RankedTensorType::get(newShape, FloatType::getBF16(ctx), newVEncoding));
++        RankedTensorType::get(newShape, BFloat16Type::get(ctx), newVEncoding));
+   } else {
+     inferredReturnTypes.push_back(xTy);
+   }
 diff --git a/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp b/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp
 index 78caf012c..8cb654539 100644
 --- a/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp
