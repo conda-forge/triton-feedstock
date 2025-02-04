@@ -1,4 +1,4 @@
-From faf80d6677d851c08c03e07394f387bf018dcd97 Mon Sep 17 00:00:00 2001
+From 8205b764298e1e1e3f9a05f7b5e3d3d94ce56229 Mon Sep 17 00:00:00 2001
 From: Maksim Levental <maksim.levental@gmail.com>
 Date: Tue, 28 Jan 2025 13:45:21 -0600
 Subject: [PATCH 14/15] [NFC] replace TritonGPUToLLVM/Utility.h macros with
@@ -44,9 +44,9 @@ Fixes #5691 and unblocks #5684
  .../lib/TritonNVIDIAGPUToLLVM/TMAToLLVM.cpp   |  21 +-
  .../lib/TritonNVIDIAGPUToLLVM/TargetInfo.cpp  |  88 +-
  .../TensorPtrOpsToLLVM.cpp                    |   3 +-
- .../UpcastMXFPToLLVM.cpp                      |  68 +-
+ .../UpcastMXFPToLLVM.cpp                      |  74 +-
  .../lib/TritonNVIDIAGPUToLLVM/Utility.cpp     |  41 +-
- 40 files changed, 1969 insertions(+), 1595 deletions(-)
+ 40 files changed, 1972 insertions(+), 1598 deletions(-)
 
 diff --git a/include/triton/Conversion/TritonGPUToLLVM/Utility.h b/include/triton/Conversion/TritonGPUToLLVM/Utility.h
 index 29b8865c0..cc5569005 100644
@@ -7732,21 +7732,22 @@ index c117eb176..97e830967 100644
  
      for (size_t i = 0; i < newOffsets.size(); ++i) {
 diff --git a/third_party/nvidia/lib/TritonNVIDIAGPUToLLVM/UpcastMXFPToLLVM.cpp b/third_party/nvidia/lib/TritonNVIDIAGPUToLLVM/UpcastMXFPToLLVM.cpp
-index 722bf56cd..0cb237311 100644
+index 722bf56cd..814dd8c44 100644
 --- a/third_party/nvidia/lib/TritonNVIDIAGPUToLLVM/UpcastMXFPToLLVM.cpp
 +++ b/third_party/nvidia/lib/TritonNVIDIAGPUToLLVM/UpcastMXFPToLLVM.cpp
 @@ -33,38 +33,39 @@ public:
    llvm::SmallVector<Value>
    unpackFP4Elements(Location loc, ConversionPatternRewriter &rewriter,
                      const llvm::SmallVector<Value> &vals, Value laneId) const {
-+    auto b = TritonLLVMOpBuilder(loc, rewriter);
-     auto fp4x2ToBf16x2 = [&loc, &rewriter](Value v) -> Value {
+-    auto fp4x2ToBf16x2 = [&loc, &rewriter](Value v) -> Value {
 -      auto em0 = and_(v, i8_val(0x70));
 -      auto em1 = and_(v, i8_val(0x7));
 -      Value v0 = or_(shl(zext(i16_ty, em0), i16_val(2)),
 -                     shl(zext(i16_ty, and_(v, i8_val(0x80))), i16_val(8)));
 -      Value v1 = or_(shl(zext(i16_ty, em1), i16_val(6)),
 -                     shl(zext(i16_ty, and_(v, i8_val(0x8))), i16_val(12)));
++    auto b = TritonLLVMOpBuilder(loc, rewriter);
++    auto fp4x2ToBf16x2 = [&b, &loc, &rewriter](Value v) -> Value {
 +      auto em0 = b.and_(v, b.i8_val(0x70));
 +      auto em1 = b.and_(v, b.i8_val(0x7));
 +      Value v0 = b.or_(b.shl(b.zext(i16_ty, em0), b.i16_val(2)),
@@ -7771,7 +7772,7 @@ index 722bf56cd..0cb237311 100644
 -                  or_(i16_val(16128), and_(v0, i16_val(0x8000))), v0);
 -      v1 = select(icmp_eq(em1, i8_val(0x1)),
 -                  or_(i16_val(16128), and_(v1, i16_val(0x8000))), v1);
-+      v0 = b.select(b.icmp_eq(b.em0, b.i8_val(0x10)),
++      v0 = b.select(b.icmp_eq(em0, b.i8_val(0x10)),
 +                    b.or_(b.i16_val(16128), b.and_(v0, b.i16_val(0x8000))), v0);
 +      v1 = b.select(b.icmp_eq(em1, b.i8_val(0x1)),
 +                    b.or_(b.i16_val(16128), b.and_(v1, b.i16_val(0x8000))), v1);
@@ -7782,7 +7783,8 @@ index 722bf56cd..0cb237311 100644
 +      return b.or_(b.zext(i32_ty, v0), b.shl(b.zext(i32_ty, v1), b.i32_val(16)));
      };
  
-     auto fp4x8ToBf16x2 = [&loc, &rewriter, &fp4x2ToBf16x2](
+-    auto fp4x8ToBf16x2 = [&loc, &rewriter, &fp4x2ToBf16x2](
++    auto fp4x8ToBf16x2 = [&b, &loc, &rewriter, &fp4x2ToBf16x2](
                               Value v) -> llvm::SmallVector<Value, 4> {
        llvm::SmallVector<Value, 4> results(4);
        for (int i = 0; i < 4; ++i) {
@@ -7799,7 +7801,7 @@ index 722bf56cd..0cb237311 100644
      auto tyX = cast<RankedTensorType>(op->getOperandTypes()[0]);
      auto operands = adaptor.getOperands();
  
-@@ -96,12 +98,12 @@ public:
+@@ -96,41 +98,41 @@ public:
      auto scaleVals = unpackLLElements(loc, operands[1], rewriter);
      auto fpType = op.getFpType();
  
@@ -7816,8 +7818,10 @@ index 722bf56cd..0cb237311 100644
  
      if (fpType == F8F6F4Type::E2M1) {
        xVals = unpackFP4Elements(loc, rewriter, xVals, laneId);
-@@ -110,27 +112,27 @@ public:
-     auto scaleBf16x2 = [&loc, &rewriter](Value v, Value s) -> Value {
+     }
+ 
+-    auto scaleBf16x2 = [&loc, &rewriter](Value v, Value s) -> Value {
++    auto scaleBf16x2 = [&b, &loc, &rewriter](Value v, Value s) -> Value {
        // Split bf16x2 into 2 bf16, scale each of them, and pack them back
        // TODO Is it true that the bfloats are always packed as bf16x2?
 -      auto bf16_0 = bitcast(trunc(i16_ty, v), bf16_ty);
