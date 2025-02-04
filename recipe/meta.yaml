@@ -33,7 +33,7 @@ source:
     - patches/0011-BACKEND-Update-LLVM-version-to-2fe947b4-5540.patch
     - patches/0012-BACKEND-bump-llvm-to-2f7ade4b-5599.patch
     - patches/0013-BACKEND-Update-LLVM-version-to-https-github.com-llvm.patch
-    - patches/0014-BACKEND-bump-to-llvm-llvm-project-c118864223c6-5684.patch
+    # - patches/0014-BACKEND-bump-to-llvm-llvm-project-c118864223c6-5684.patch
 
 build:
   number: {{ build_number }}
