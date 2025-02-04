@@ -45,6 +45,8 @@ build:
   # No success enabling Windows build as of 3.1.0:
   # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
   skip: true  # [win or cuda_compiler_version in ("None", "11.8")]
+  ignore_run_exports_from:
+    - llvm
 
 requirements:
   build:
@@ -77,6 +79,9 @@ requirements:
     - cuda-cuobjdump
     - cuda-cudart
     - cuda-cupti
+    # llvm v20 is not out yet, we must use the rc's; use a manual, channel-specific
+    # run-export to avoid that consumers have to add the channel themselves
+    - conda-forge/label/llvm_rc::libllvm20
 
 test:
   imports:
