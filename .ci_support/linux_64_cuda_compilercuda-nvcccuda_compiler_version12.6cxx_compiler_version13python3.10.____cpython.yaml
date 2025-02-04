@@ -5,7 +5,7 @@ c_stdlib_version:
 cdt_name:
 - conda
 channel_sources:
-- conda-forge
+- conda-forge/label/llvm_rc,conda-forge
 channel_targets:
 - conda-forge main
 cuda_compiler:
@@ -19,11 +19,11 @@ cxx_compiler_version:
 docker_image:
 - quay.io/condaforge/linux-anvil-x86_64:alma9
 llvm:
-- '19'
+- '20'
 llvmdev:
-- '19'
+- '20'
 mlir:
-- '19'
+- '20'
 pin_run_as_build:
   python:
     min_pin: x.x

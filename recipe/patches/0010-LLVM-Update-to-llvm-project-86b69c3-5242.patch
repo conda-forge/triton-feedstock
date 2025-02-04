@@ -1,0 +1,17 @@
+From eaedfbb596a0a284339a9b263e95b0021411d570 Mon Sep 17 00:00:00 2001
+From: peterbell10 <peterbell10@openai.com>
+Date: Sat, 23 Nov 2024 03:42:57 +0000
+Subject: [PATCH 10/16] [LLVM] Update to llvm-project@86b69c3 (#5242)
+
+This includes llvm/llvm-project#115627
+---
+ cmake/llvm-hash.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/llvm-hash.txt b/cmake/llvm-hash.txt
+index 687a20e71..50d024794 100644
+--- a/cmake/llvm-hash.txt
++++ b/cmake/llvm-hash.txt
+@@ -1 +1 @@
+-bd9145c8c21334e099d51b3e66f49d51d24931ee
++86b69c31642e98f8357df62c09d118ad1da4e16a

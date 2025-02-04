@@ -1,0 +1,176 @@
+From c7acbd466b64cf2a57cbfdf211e120611ad5de4d Mon Sep 17 00:00:00 2001
+From: Goran Flegar <gflegar@google.com>
+Date: Wed, 22 Jan 2025 17:00:17 +0100
+Subject: [PATCH 13/16] [BACKEND] Update LLVM version to
+ https://github.com/llvm/llvm-project/commit/e2402615a5a76d46a433dfcc1de10b38a1263c9d
+ (#5667)
+
+Trivial MLIR API change: `FloatType::getF<bitwidth>` to
+`Float<bitwidth>Type::get`, and LLVM API change `PointerUnion::get<T>`
+to `cast<T>`.
+
+[Cherry-pick note: compare
+  - https://github.com/llvm/llvm-project/commit/c24ce324d56328e4b91c8797ea4935545084303e
+  - https://github.com/llvm/llvm-project/commit/f4943464d769e2eacd5c54dfaaf0468788abeb84
+]
+---
+ cmake/llvm-hash.txt                                    | 2 +-
+ include/triton/Conversion/MLIRTypes.h                  | 8 ++++----
+ include/triton/Dialect/Triton/IR/TritonOps.td          | 2 +-
+ lib/Dialect/TritonGPU/IR/Ops.cpp                       | 4 ++--
+ lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp  | 4 ++--
+ third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp | 4 ++--
+ unittest/Dialect/TritonGPU/DialectTest.cpp             | 6 +++---
+ unittest/Dialect/TritonGPU/DumpLayoutTest.cpp          | 6 +++---
+ 8 files changed, 18 insertions(+), 18 deletions(-)
+
+diff --git a/cmake/llvm-hash.txt b/cmake/llvm-hash.txt
+index ef3cafa3b..e793a5b69 100644
+--- a/cmake/llvm-hash.txt
++++ b/cmake/llvm-hash.txt
+@@ -1 +1 @@
+-2f7ade4b5e399962e18f5f9a0ab0b7335deece51
++e2402615a5a76d46a433dfcc1de10b38a1263c9d
+diff --git a/include/triton/Conversion/MLIRTypes.h b/include/triton/Conversion/MLIRTypes.h
+index a00f9f844..afa1aa989 100644
+--- a/include/triton/Conversion/MLIRTypes.h
++++ b/include/triton/Conversion/MLIRTypes.h
+@@ -21,10 +21,10 @@ inline Type u1Ty(MLIRContext *ctx) {
+ }
+ 
+ // Float types
+-inline Type f16Ty(MLIRContext *ctx) { return FloatType::getF16(ctx); }
+-inline Type f32Ty(MLIRContext *ctx) { return FloatType::getF32(ctx); }
+-inline Type f64Ty(MLIRContext *ctx) { return FloatType::getF64(ctx); }
+-inline Type bf16Ty(MLIRContext *ctx) { return FloatType::getBF16(ctx); }
++inline Type f16Ty(MLIRContext *ctx) { return Float16Type::get(ctx); }
++inline Type f32Ty(MLIRContext *ctx) { return Float32Type::get(ctx); }
++inline Type f64Ty(MLIRContext *ctx) { return Float64Type::get(ctx); }
++inline Type bf16Ty(MLIRContext *ctx) { return BFloat16Type::get(ctx); }
+ 
+ inline bool isFloat(Type type) {
+   return type.isF32() || type.isF64() || type.isF16() || type.isF128() ||
+diff --git a/include/triton/Dialect/Triton/IR/TritonOps.td b/include/triton/Dialect/Triton/IR/TritonOps.td
+index 283dd9165..b6b875f16 100644
+--- a/include/triton/Dialect/Triton/IR/TritonOps.td
++++ b/include/triton/Dialect/Triton/IR/TritonOps.td
+@@ -1011,7 +1011,7 @@ def CallOp : TT_Op<"call", [CallOpInterface, /*MemRefsNormalizable, */DeclareOpI
+ 
+     /// Set the callee for this operation.
+     void setCalleeFromCallable(CallInterfaceCallable callee) {
+-      (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
++      (*this)->setAttr("callee", cast<SymbolRefAttr>(callee));
+     }
+ 
+     // Required by CallOpInterface.
+diff --git a/lib/Dialect/TritonGPU/IR/Ops.cpp b/lib/Dialect/TritonGPU/IR/Ops.cpp
+index e61fe096e..9a29ea97f 100644
+--- a/lib/Dialect/TritonGPU/IR/Ops.cpp
++++ b/lib/Dialect/TritonGPU/IR/Ops.cpp
+@@ -17,7 +17,7 @@ LogicalResult UpcastMXFPOp::verify() {
+   auto xTy = getSrc().getType();
+   auto scaleTy = getScale().getType();
+ 
+-  if (xTy.getElementType() != FloatType::getBF16(getContext()) &&
++  if (xTy.getElementType() != BFloat16Type::get(getContext()) &&
+       xTy.getElementType() != IntegerType::get(getContext(), 8)) {
+     return emitOpError("element type of the first operand must be bf16 or i8");
+   }
+@@ -97,7 +97,7 @@ LogicalResult UpcastMXFPOp::inferReturnTypes(
+     auto newShape = SmallVector<int64_t>(xShape);
+     newShape.back() *= 2;
+     inferredReturnTypes.push_back(
+-        RankedTensorType::get(newShape, FloatType::getBF16(ctx), newVEncoding));
++        RankedTensorType::get(newShape, BFloat16Type::get(ctx), newVEncoding));
+   } else {
+     inferredReturnTypes.push_back(xTy);
+   }
+diff --git a/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp b/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
+index 85aaa547c..d1e9f7b97 100644
+--- a/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
++++ b/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
+@@ -418,9 +418,9 @@ public:
+     auto enumToType = [&rewriter](F8F6F4Type type) {
+       switch (type) {
+       case F8F6F4Type::E4M3:
+-        return rewriter.getFloat8E4M3FNType();
++        return rewriter.getType<Float8E4M3FNType>();
+       case F8F6F4Type::E5M2:
+-        return rewriter.getFloat8E5M2Type();
++        return rewriter.getType<Float8E4M3FNType>();
+       default:
+         llvm_unreachable("unexpected type");
+       }
+diff --git a/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp b/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp
+index 78caf012c..8cb654539 100644
+--- a/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp
++++ b/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp
+@@ -56,9 +56,9 @@ Type getTypeFromConstraint(char constraint, PatternRewriter &rewriter) {
+   else if (constraint == 'l')
+     ty = IntegerType::get(rewriter.getContext(), 64);
+   else if (constraint == 'f')
+-    ty = FloatType::getF32(rewriter.getContext());
++    ty = Float32Type::get(rewriter.getContext());
+   else if (constraint == 'd')
+-    ty = FloatType::getF64(rewriter.getContext());
++    ty = Float64Type::get(rewriter.getContext());
+   else {
+     assert(false && "Unsupported constraint");
+   }
+diff --git a/unittest/Dialect/TritonGPU/DialectTest.cpp b/unittest/Dialect/TritonGPU/DialectTest.cpp
+index c27c63335..f02fbbc68 100644
+--- a/unittest/Dialect/TritonGPU/DialectTest.cpp
++++ b/unittest/Dialect/TritonGPU/DialectTest.cpp
+@@ -492,10 +492,10 @@ TEST_F(InferLayoutTest, FuzzReshape) {
+         llvm::to_vector(llvm::reverse(llvm::seq<unsigned>(rank))));
+ 
+     auto srcTy = RankedTensorType::get(
+-        srcShape, FloatType::getF32(&ctx),
++        srcShape, Float32Type::get(&ctx),
+         BlockedEncodingAttr::get(&ctx, sizePerThread, threadsPerWarp,
+                                  warpsPerCTA, order, ctaLayout));
+-    auto dstTy = RankedTensorType::get(dstShape, FloatType::getF32(&ctx));
++    auto dstTy = RankedTensorType::get(dstShape, Float32Type::get(&ctx));
+ 
+     bool couldReshape = false;
+     testReshape(srcTy, dstTy, /*expectedDstEnc=*/std::nullopt,
+@@ -526,7 +526,7 @@ public:
+     ctx.getOrLoadDialect<TritonGPUDialect>();
+     ctaLayout =
+         triton::gpu::CTALayoutAttr::get(&ctx, ctaPerCGA, ctaSplit, ctaOrder);
+-    f16Ty = FloatType::getF16(&ctx);
++    f16Ty = Float16Type::get(&ctx);
+   }
+ 
+   triton::gpu::AMDMfmaEncodingAttr createMFMA(int mDim, int nDim,
+diff --git a/unittest/Dialect/TritonGPU/DumpLayoutTest.cpp b/unittest/Dialect/TritonGPU/DumpLayoutTest.cpp
+index b73086058..f9115a15d 100644
+--- a/unittest/Dialect/TritonGPU/DumpLayoutTest.cpp
++++ b/unittest/Dialect/TritonGPU/DumpLayoutTest.cpp
+@@ -182,7 +182,7 @@ TEST_F(DumpLayoutTest, Simple1DShared) {
+                              {1},   /* ord, row-major */
+                              {1});  /* cOrd */
+ 
+-  auto elemTy = FloatType::getF16(sharedLayout.getContext());
++  auto elemTy = Float16Type::get(sharedLayout.getContext());
+   auto tensorType = RankedTensorType::get({32}, elemTy, sharedLayout);
+   std::string layout = getLayoutStr(tensorType, /*useHWPointOfView=*/false);
+   assertSameStr(refStr, layout);
+@@ -237,7 +237,7 @@ TEST_F(DumpLayoutTest, Larger2DShared) {
+                              {1, 0},  /* ord, row-major */
+                              {1, 0}); /* cOrd */
+ 
+-  auto elemTy = FloatType::getF16(sharedLayout.getContext());
++  auto elemTy = Float16Type::get(sharedLayout.getContext());
+   auto tensorType = RankedTensorType::get({8, 32}, elemTy, sharedLayout);
+   std::string layout = getLayoutStr(tensorType, /*useHWPointOfView=*/false);
+   assertSameStr(refStr, layout);
+@@ -510,7 +510,7 @@ Offset: 255 -> (7,17)
+                                {1, 0},  /* ord, row-major */
+                                {1, 0}); /* cOrd */
+ 
+-  auto elemTyHW = FloatType::getF16(sharedLayoutHW.getContext());
++  auto elemTyHW = Float16Type::get(sharedLayoutHW.getContext());
+   auto tensorTypeHW = RankedTensorType::get({8, 32}, elemTyHW, sharedLayoutHW);
+ 
+   std::string layoutHW = getLayoutStr(tensorTypeHW, /*useHWPointOfView=*/true);

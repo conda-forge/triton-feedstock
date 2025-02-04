@@ -1,0 +1,37 @@
+From 3815ffd56cf896c573b165e6fadc7d23e2325ac8 Mon Sep 17 00:00:00 2001
+From: Hongtao Yu <hoy@meta.com>
+Date: Mon, 4 Nov 2024 22:59:56 -0800
+Subject: [PATCH 08/16] =?UTF-8?q?[BACKEND]=20Update=20llvm=20to=20llvm/llv?=
+ =?UTF-8?q?m-project@fa57c7a6a5f594a9e3ae2dbe35=E2=80=A6=20(#5064)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Bumping llvm to include a loop unroller fix:
+https://github.com/llvm/llvm-project/pull/114573. This is needed for
+subsequent loop unroller upstreaming work.
+---
+ cmake/llvm-hash.txt                   | 2 +-
+ test/lib/Instrumentation/GPUHello.cpp | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/cmake/llvm-hash.txt b/cmake/llvm-hash.txt
+index 6f7922594..840d6d9f3 100644
+--- a/cmake/llvm-hash.txt
++++ b/cmake/llvm-hash.txt
+@@ -1 +1 @@
+-b74e588e1f460eb48ceb1a30cf8ac870b7537dcc
++fa57c7a6a5f594a9e3ae2dbe3542cf89a20cdd73
+diff --git a/test/lib/Instrumentation/GPUHello.cpp b/test/lib/Instrumentation/GPUHello.cpp
+index 3bee8ce90..5c71857c8 100644
+--- a/test/lib/Instrumentation/GPUHello.cpp
++++ b/test/lib/Instrumentation/GPUHello.cpp
+@@ -61,7 +61,7 @@ bool GpuHello::runOnModule(Module &module) {
+ 
+ PassPluginLibraryInfo getPassPluginInfo() {
+   const auto callback = [](PassBuilder &pb) {
+-    pb.registerOptimizerLastEPCallback([&](ModulePassManager &mpm, auto) {
++    pb.registerOptimizerLastEPCallback([&](ModulePassManager &mpm, auto, auto) {
+       mpm.addPass(GpuHello());
+       return true;
+     });

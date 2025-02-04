@@ -1,0 +1,70 @@
+From c3a039063921b55a602b234e299168444116e936 Mon Sep 17 00:00:00 2001
+From: peterbell10 <peterbell10@openai.com>
+Date: Mon, 4 Nov 2024 18:52:37 +0000
+Subject: [PATCH 07/16] [BACKEND] Update LLVM hash (#5040)
+
+Fixes #4769
+---
+ cmake/llvm-hash.txt                                   |  2 +-
+ .../TritonToTritonGPU/TritonGPUConversion.cpp         | 11 +++++------
+ test/TritonGPU/amd/amd-convert-buffer-ops.mlir        |  2 +-
+ 3 files changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/cmake/llvm-hash.txt b/cmake/llvm-hash.txt
+index b000a3129..6f7922594 100644
+--- a/cmake/llvm-hash.txt
++++ b/cmake/llvm-hash.txt
+@@ -1 +1 @@
+-b5cc222d7429fe6f18c787f633d5262fac2e676f
++b74e588e1f460eb48ceb1a30cf8ac870b7537dcc
+diff --git a/lib/Conversion/TritonToTritonGPU/TritonGPUConversion.cpp b/lib/Conversion/TritonToTritonGPU/TritonGPUConversion.cpp
+index 34fb89954..06e75ee18 100644
+--- a/lib/Conversion/TritonToTritonGPU/TritonGPUConversion.cpp
++++ b/lib/Conversion/TritonToTritonGPU/TritonGPUConversion.cpp
+@@ -56,20 +56,19 @@ TritonGPUTypeConverter::TritonGPUTypeConverter(MLIRContext *context,
+   // This will create newArg, and map(origArg, newArg)
+   addArgumentMaterialization([&](OpBuilder &builder,
+                                  RankedTensorType tensorType, ValueRange inputs,
+-                                 Location loc) -> std::optional<Value> {
++                                 Location loc) -> Value {
+     llvm_unreachable("Argument rematerialization should not happen in Triton "
+                      "-> TritonGPU conversion");
+-    return std::nullopt;
++    return {};
+   });
+ 
+   // If the origValue still has live user(s), use this to
+   // convert origValue to newValue
+   addSourceMaterialization([&](OpBuilder &builder, RankedTensorType tensorType,
+-                               ValueRange inputs,
+-                               Location loc) -> std::optional<Value> {
++                               ValueRange inputs, Location loc) -> Value {
+     llvm_unreachable("Source rematerialization should not happen in Triton -> "
+                      "TritonGPU Conversion");
+-    return std::nullopt;
++    return {};
+   });
+ 
+   // This will be called when (desiredType != newOperandType)
+@@ -79,7 +78,7 @@ TritonGPUTypeConverter::TritonGPUTypeConverter(MLIRContext *context,
+                                ValueRange inputs, Location loc) {
+     auto cast =
+         builder.create<triton::gpu::ConvertLayoutOp>(loc, tensorType, inputs);
+-    return std::optional<Value>(cast.getResult());
++    return cast.getResult();
+   });
+ }
+ 
+diff --git a/test/TritonGPU/amd/amd-convert-buffer-ops.mlir b/test/TritonGPU/amd/amd-convert-buffer-ops.mlir
+index 4fb418e38..25897f2a9 100644
+--- a/test/TritonGPU/amd/amd-convert-buffer-ops.mlir
++++ b/test/TritonGPU/amd/amd-convert-buffer-ops.mlir
+@@ -42,7 +42,7 @@ module attributes {"triton_gpu.num-ctas" = 1 : i32, "triton_gpu.num-warps" = 4 :
+     %1 = arith.muli %0, %c1024_i32 : i32
+     %sub = arith.subi %1, %c128_i32 : i32
+     %cmp = arith.cmpi sgt, %sub, %c0_i32 : i32
+-    "llvm.intr.assume"(%cmp) : (i1) -> ()
++    llvm.intr.assume %cmp : i1
+     %2 = tt.splat %sub : i32 -> tensor<1024xi32, #blocked>
+     %3 = tt.make_range {end = 1024 : i32, start = 0 : i32} : tensor<1024xi32, #blocked>
+     // CHECK: %[[offset:.*]] = arith.addi
