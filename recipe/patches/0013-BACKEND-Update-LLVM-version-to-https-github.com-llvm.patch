@@ -1,4 +1,4 @@
-From f6393efc1242ced009d2e6606512f3e65662fa44 Mon Sep 17 00:00:00 2001
+From c7acbd466b64cf2a57cbfdf211e120611ad5de4d Mon Sep 17 00:00:00 2001
 From: Goran Flegar <gflegar@google.com>
 Date: Wed, 22 Jan 2025 17:00:17 +0100
 Subject: [PATCH 13/14] [BACKEND] Update LLVM version to
@@ -8,15 +8,21 @@ Subject: [PATCH 13/14] [BACKEND] Update LLVM version to
 Trivial MLIR API change: `FloatType::getF<bitwidth>` to
 `Float<bitwidth>Type::get`, and LLVM API change `PointerUnion::get<T>`
 to `cast<T>`.
+
+[Cherry-pick note: compare
+  - https://github.com/llvm/llvm-project/commit/c24ce324d56328e4b91c8797ea4935545084303e
+  - https://github.com/llvm/llvm-project/commit/f4943464d769e2eacd5c54dfaaf0468788abeb84
+]
 ---
  cmake/llvm-hash.txt                                    | 2 +-
  include/triton/Conversion/MLIRTypes.h                  | 8 ++++----
  include/triton/Dialect/Triton/IR/TritonOps.td          | 2 +-
  lib/Dialect/TritonGPU/IR/Ops.cpp                       | 4 ++--
+ lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp  | 4 ++--
  third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp | 4 ++--
  unittest/Dialect/TritonGPU/DialectTest.cpp             | 6 +++---
  unittest/Dialect/TritonGPU/DumpLayoutTest.cpp          | 6 +++---
- 7 files changed, 16 insertions(+), 16 deletions(-)
+ 8 files changed, 18 insertions(+), 18 deletions(-)
 
 diff --git a/cmake/llvm-hash.txt b/cmake/llvm-hash.txt
 index ef3cafa3b..e793a5b69 100644
@@ -79,6 +85,22 @@ index e61fe096e..9a29ea97f 100644
    } else {
      inferredReturnTypes.push_back(xTy);
    }
+diff --git a/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp b/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
+index 85aaa547c..d1e9f7b97 100644
+--- a/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
++++ b/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
+@@ -418,9 +418,9 @@ public:
+     auto enumToType = [&rewriter](F8F6F4Type type) {
+       switch (type) {
+       case F8F6F4Type::E4M3:
+-        return rewriter.getFloat8E4M3FNType();
++        return rewriter.getType<Float8E4M3FNType>();
+       case F8F6F4Type::E5M2:
+-        return rewriter.getFloat8E5M2Type();
++        return rewriter.getType<Float8E4M3FNType>();
+       default:
+         llvm_unreachable("unexpected type");
+       }
 diff --git a/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp b/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp
 index 78caf012c..8cb654539 100644
 --- a/third_party/nvidia/lib/NVGPUToLLVM/NVGPUToLLVMPass.cpp

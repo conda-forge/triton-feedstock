@@ -1,4 +1,4 @@
-From 940edfaa0100e2898d6b623841ba365ce364f3f8 Mon Sep 17 00:00:00 2001
+From 4e1190bb80c998afd1fae7353cce3255fdfc36ec Mon Sep 17 00:00:00 2001
 From: Maksim Levental <maksim.levental@gmail.com>
 Date: Wed, 29 Jan 2025 12:45:24 -0600
 Subject: [PATCH 14/14] [BACKEND] bump to llvm/llvm-project@c118864223c6
@@ -96,7 +96,7 @@ index 4915d7b1a..304d93083 100644
           (elemTy.isF32() && version >= 2) ||
           (elemTy.isInteger(8) && version >= 2);
 diff --git a/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp b/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
-index 85aaa547c..24159c6a3 100644
+index d1e9f7b97..a46a9cfcb 100644
 --- a/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
 +++ b/lib/Dialect/TritonGPU/Transforms/AccelerateMatmul.cpp
 @@ -361,7 +361,7 @@ static void decomposeMixedModeDotOp(ModuleOp mod, int computeCapability) {
