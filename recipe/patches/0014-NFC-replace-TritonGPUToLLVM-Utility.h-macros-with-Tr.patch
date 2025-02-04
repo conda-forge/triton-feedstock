@@ -1,4 +1,4 @@
-From d66ff7004c8879f9b26e21adea8057f3a75ec08f Mon Sep 17 00:00:00 2001
+From c520dabe40ccbc050ab3da932c6537c2050fd43a Mon Sep 17 00:00:00 2001
 From: Maksim Levental <maksim.levental@gmail.com>
 Date: Tue, 28 Jan 2025 13:45:21 -0600
 Subject: [PATCH 14/15] [NFC] replace TritonGPUToLLVM/Utility.h macros with
@@ -6,7 +6,7 @@ Subject: [PATCH 14/15] [NFC] replace TritonGPUToLLVM/Utility.h macros with
 
 Fixes #5691 and unblocks #5684
 ---
- .../Conversion/TritonGPUToLLVM/Utility.h      | 494 +++++++----
+ .../Conversion/TritonGPUToLLVM/Utility.h      | 609 +++++++++-----
  .../TritonGPUToLLVM/AssertOpToLLVM.cpp        |  13 +-
  .../TritonGPUToLLVM/ControlFlowOpToLLVM.cpp   |   7 +-
  .../TritonGPUToLLVM/ConvertLayoutOpToLLVM.cpp |  75 +-
@@ -44,10 +44,10 @@ Fixes #5691 and unblocks #5684
  .../TensorPtrOpsToLLVM.cpp                    |   3 +-
  .../UpcastMXFPToLLVM.cpp                      |  68 +-
  .../lib/TritonNVIDIAGPUToLLVM/Utility.cpp     |  41 +-
- 38 files changed, 1904 insertions(+), 1535 deletions(-)
+ 38 files changed, 1963 insertions(+), 1591 deletions(-)
 
 diff --git a/include/triton/Conversion/TritonGPUToLLVM/Utility.h b/include/triton/Conversion/TritonGPUToLLVM/Utility.h
-index 29b8865c0..bbeec6be0 100644
+index 29b8865c0..cc5569005 100644
 --- a/include/triton/Conversion/TritonGPUToLLVM/Utility.h
 +++ b/include/triton/Conversion/TritonGPUToLLVM/Utility.h
 @@ -27,84 +27,253 @@
@@ -502,7 +502,104 @@ index 29b8865c0..bbeec6be0 100644
    }
  
    return multiDimBase;
-@@ -687,14 +839,15 @@ emitBaseIndexWithinCTAForMmaLayoutV2V3(Location loc, RewriterBase &rewriter,
+@@ -534,6 +686,7 @@ inline SmallVector<Value>
+ emitBaseIndexWithinCTAForMmaLayoutV1(Location loc, RewriterBase &rewriter,
+                                      const NvidiaMmaEncodingAttr &mmaLayout,
+                                      RankedTensorType type) {
++  auto b = TritonLLVMOpBuilder(loc, rewriter);
+   auto shape = type.getShape();
+   auto wpt = mmaLayout.getWarpsPerCTA();
+   static constexpr std::array<int, 3> fpw{{2, 2, 1}};
+@@ -542,13 +695,13 @@ emitBaseIndexWithinCTAForMmaLayoutV1(Location loc, RewriterBase &rewriter,
+ 
+   Value thread = getThreadId(rewriter, loc);
+   auto *ctx = thread.getContext();
+-  Value _1 = i32_val(1);
+-  Value _2 = i32_val(2);
+-  Value _4 = i32_val(4);
+-  Value _16 = i32_val(16);
+-  Value _32 = i32_val(32);
+-  Value _fpw0 = i32_val(fpw[0]);
+-  Value _fpw1 = i32_val(fpw[1]);
++  Value _1 = b.i32_val(1);
++  Value _2 = b.i32_val(2);
++  Value _4 = b.i32_val(4);
++  Value _16 = b.i32_val(16);
++  Value _32 = b.i32_val(32);
++  Value _fpw0 = b.i32_val(fpw[0]);
++  Value _fpw1 = b.i32_val(fpw[1]);
+ 
+   // A info
+   auto aRep = mmaLayout.getMMAv1Rep(0);
+@@ -561,41 +714,41 @@ emitBaseIndexWithinCTAForMmaLayoutV1(Location loc, RewriterBase &rewriter,
+   SmallVector<int, 2> spw({aSpw[0], bSpw[1]});
+   SmallVector<unsigned, 2> shapePerCTA({spw[0] * wpt[0], spw[1] * wpt[1]});
+ 
+-  Value lane = urem(thread, _32);
+-  Value warp = udiv(thread, _32);
++  Value lane = b.urem(thread, _32);
++  Value warp = b.udiv(thread, _32);
+ 
+-  Value warp0 = urem(warp, i32_val(wpt[0]));
+-  Value warp12 = udiv(warp, i32_val(wpt[0]));
+-  Value warp1 = urem(warp12, i32_val(wpt[1]));
++  Value warp0 = b.urem(warp, b.i32_val(wpt[0]));
++  Value warp12 = b.udiv(warp, b.i32_val(wpt[0]));
++  Value warp1 = b.urem(warp12, b.i32_val(wpt[1]));
+ 
+   // warp offset
+-  Value offWarpM = mul(warp0, i32_val(spw[0]));
+-  Value offWarpN = mul(warp1, i32_val(spw[1]));
++  Value offWarpM = b.mul(warp0, b.i32_val(spw[0]));
++  Value offWarpN = b.mul(warp1, b.i32_val(spw[1]));
+   // quad offset
+-  Value offQuadM = mul(udiv(and_(lane, _16), _4), _fpw0);
+-  Value offQuadN = mul(udiv(and_(lane, _16), _4), _fpw1);
++  Value offQuadM = b.mul(b.udiv(b.and_(lane, _16), _4), _fpw0);
++  Value offQuadN = b.mul(b.udiv(b.and_(lane, _16), _4), _fpw1);
+   // pair offset
+-  Value offPairM = udiv(urem(lane, _16), _4);
+-  offPairM = urem(offPairM, _fpw0);
+-  offPairM = mul(offPairM, _4);
+-  Value offPairN = udiv(urem(lane, _16), _4);
+-  offPairN = udiv(offPairN, _fpw0);
+-  offPairN = urem(offPairN, _fpw1);
+-  offPairN = mul(offPairN, _4);
+-  offPairM = mul(offPairM, i32_val(rep[0] / 2));
+-  offQuadM = mul(offQuadM, i32_val(rep[0] / 2));
+-  offPairN = mul(offPairN, i32_val(rep[1] / 2));
+-  offQuadN = mul(offQuadN, i32_val(rep[1] / 2));
++  Value offPairM = b.udiv(b.urem(lane, _16), _4);
++  offPairM = b.urem(offPairM, _fpw0);
++  offPairM = b.mul(offPairM, _4);
++  Value offPairN = b.udiv(b.urem(lane, _16), _4);
++  offPairN = b.udiv(offPairN, _fpw0);
++  offPairN = b.urem(offPairN, _fpw1);
++  offPairN = b.mul(offPairN, _4);
++  offPairM = b.mul(offPairM, b.i32_val(rep[0] / 2));
++  offQuadM = b.mul(offQuadM, b.i32_val(rep[0] / 2));
++  offPairN = b.mul(offPairN, b.i32_val(rep[1] / 2));
++  offQuadN = b.mul(offQuadN, b.i32_val(rep[1] / 2));
+   // quad pair offset
+-  Value offLaneM = add(offPairM, offQuadM);
+-  Value offLaneN = add(offPairN, offQuadN);
++  Value offLaneM = b.add(offPairM, offQuadM);
++  Value offLaneN = b.add(offPairN, offQuadN);
+   // a, b offset
+-  Value offsetAM = add(offWarpM, offLaneM);
+-  Value offsetBN = add(offWarpN, offLaneN);
++  Value offsetAM = b.add(offWarpM, offLaneM);
++  Value offsetBN = b.add(offWarpN, offLaneN);
+   // m indices
+-  Value offsetCM = add(and_(lane, _1), offsetAM);
++  Value offsetCM = b.add(b.and_(lane, _1), offsetAM);
+   // n indices
+-  Value offsetCN = add((and_(lane, _2)), (add(offWarpN, offPairN)));
++  Value offsetCN = b.add((b.and_(lane, _2)), (b.add(offWarpN, offPairN)));
+   return {offsetCM, offsetCN};
+ }
+ 
+@@ -687,14 +840,15 @@ emitBaseIndexWithinCTAForMmaLayoutV2V3(Location loc, RewriterBase &rewriter,
    auto warpOrder = triton::gpu::getWarpOrder(mmaLayout);
    ArrayRef<unsigned int> instrShape = mmaLayout.getInstrShape();
    SmallVector<Value> warpsPerCTA;
@@ -522,7 +619,7 @@ index 29b8865c0..bbeec6be0 100644
  
    uint32_t repM =
        (_warpsPerCTA[rank - 2] * instrShape[rank - 2]) / shapePerCTA[rank - 2];
-@@ -715,11 +868,11 @@ emitBaseIndexWithinCTAForMmaLayoutV2V3(Location loc, RewriterBase &rewriter,
+@@ -715,11 +869,11 @@ emitBaseIndexWithinCTAForMmaLayoutV2V3(Location loc, RewriterBase &rewriter,
  
    SmallVector<Value> multiDimWarpId(rank);
    multiDimWarpId = delinearize(rewriter, loc, warpId, _warpsPerCTA, warpOrder);
@@ -538,7 +635,7 @@ index 29b8865c0..bbeec6be0 100644
  
    SmallVector<Value> multiDimBase(rank);
    if (rank == 3)
-@@ -731,10 +884,10 @@ emitBaseIndexWithinCTAForMmaLayoutV2V3(Location loc, RewriterBase &rewriter,
+@@ -731,10 +885,10 @@ emitBaseIndexWithinCTAForMmaLayoutV2V3(Location loc, RewriterBase &rewriter,
    // we rely on the caller to check.  Worst case we crash, which is better than
    // silently producing bad code.
    if (warpsM != 0)
@@ -551,7 +648,7 @@ index 29b8865c0..bbeec6be0 100644
  
    return multiDimBase;
  }
-@@ -771,55 +924,56 @@ emitBaseIndexForMfmaLayout(Location loc, RewriterBase &rewriter,
+@@ -771,55 +925,56 @@ emitBaseIndexForMfmaLayout(Location loc, RewriterBase &rewriter,
    assert(rank == 2 || rank == 3);
    auto _warpsPerCTA = mfmaLayout.getWarpsPerCTA();
    SmallVector<Value> warpsPerCTA;
@@ -624,7 +721,7 @@ index 29b8865c0..bbeec6be0 100644
    }
    return multiDimBase;
  }
-@@ -929,55 +1083,56 @@ emitBaseIndexForWmmaLayout(Location loc, RewriterBase &rewriter,
+@@ -929,55 +1084,56 @@ emitBaseIndexForWmmaLayout(Location loc, RewriterBase &rewriter,
    auto rank = _warpsPerCTA.size();
    assert(rank == 2 || rank == 3);
    SmallVector<Value> warpsPerCTA;
@@ -698,7 +795,7 @@ index 29b8865c0..bbeec6be0 100644
    }
    return multiDimBase;
  }
-@@ -1084,16 +1239,18 @@ inline SmallVector<Value> emitCTAOffsetForLayout(Location loc,
+@@ -1084,16 +1240,18 @@ inline SmallVector<Value> emitCTAOffsetForLayout(Location loc,
    SmallVector<Value> multiDimClusterCTAId =
        delinearize(rewriter, loc, clusterCTAId, CTAsPerCGA, CTAOrder);
  
@@ -719,7 +816,7 @@ index 29b8865c0..bbeec6be0 100644
  
    return CTAOffset;
  }
-@@ -1134,6 +1291,7 @@ emitBaseIndexForLayoutImpl(Location loc, RewriterBase &rewriter,
+@@ -1134,6 +1292,7 @@ emitBaseIndexForLayoutImpl(Location loc, RewriterBase &rewriter,
    } else {
      llvm_unreachable("unsupported emitBaseIndexForLayout");
    }
@@ -727,7 +824,7 @@ index 29b8865c0..bbeec6be0 100644
    if (withCTAOffset) {
      auto CTAOffset =
          emitCTAOffsetForLayout(loc, rewriter, target, layout, shape);
-@@ -1144,7 +1302,7 @@ emitBaseIndexForLayoutImpl(Location loc, RewriterBase &rewriter,
+@@ -1144,7 +1303,7 @@ emitBaseIndexForLayoutImpl(Location loc, RewriterBase &rewriter,
        // off.
        if (!result[k])
          continue;
@@ -736,7 +833,140 @@ index 29b8865c0..bbeec6be0 100644
      }
    }
    return result;
-@@ -1398,9 +1556,10 @@ inline SmallVector<Value> unpackLLElements(Location loc, Value llvmStruct,
+@@ -1229,9 +1388,10 @@ inline DenseMap<unsigned, Value> getSwizzledSharedPtrs(
+   // then (x + y) XOR z = 0byyyyxxxx XOR 0b00000zzzz = (x XOR z) + y
+   // This means that we can use some immediate offsets for shared memory
+   // operations.
++  auto b = TritonLLVMOpBuilder(loc, rewriter);
+   auto dstPtrTy = smemObj.base.getType();
+   auto dstOffset = dot(rewriter, loc, offsetVals, smemObj.strides);
+-  Value dstPtrBase = gep(dstPtrTy, resElemTy, smemObj.base, dstOffset);
++  Value dstPtrBase = b.gep(dstPtrTy, resElemTy, smemObj.base, dstOffset);
+ 
+   auto srcEncoding = srcTy.getEncoding();
+   auto srcShape = srcTy.getShape();
+@@ -1264,7 +1424,7 @@ inline DenseMap<unsigned, Value> getSwizzledSharedPtrs(
+   }
+   unsigned numElemsPerSwizzlingRow =
+       swizzlingByteWidth * 8 / resElemTy.getIntOrFloatBitWidth();
+-  Value numElemsPerSwizzlingRowVal = i32_val(numElemsPerSwizzlingRow);
++  Value numElemsPerSwizzlingRowVal = b.i32_val(numElemsPerSwizzlingRow);
+   unsigned leadingDimOffset;
+   if (outOrder.size() >= 2) {
+     leadingDimOffset = numElemsPerSwizzlingRow * srcShapePerCTA[outOrder[1]];
+@@ -1272,20 +1432,20 @@ inline DenseMap<unsigned, Value> getSwizzledSharedPtrs(
+     leadingDimOffset = numElemsPerSwizzlingRow;
+   }
+ 
+-  Value leadingDimOffsetVal = i32_val(leadingDimOffset);
++  Value leadingDimOffsetVal = b.i32_val(leadingDimOffset);
+   // Return values
+   DenseMap<unsigned, Value> ret;
+   // cache for non-immediate offsets
+   DenseMap<unsigned, Value> cacheCol, cacheRow;
+   unsigned minVec = std::min(outVec, inVec);
+-  Value strideRow = outOrder.size() >= 2 ? srcStrides[outOrder[1]] : i32_val(0);
++  Value strideRow = outOrder.size() >= 2 ? srcStrides[outOrder[1]] : b.i32_val(0);
+   Value strideCol = srcStrides[outOrder[0]];
+   LDBG("getSwizzledSharedPtrs: perPhase = "
+        << perPhase << " maxPhase = " << maxPhase << " minVec = " << minVec
+        << " inVec = " << inVec << " outVec = " << outVec << " strideRow "
+        << strideRow << " strideCol " << strideCol);
+   for (unsigned elemIdx = 0; elemIdx < numElems; elemIdx += minVec) {
+-    Value offset = i32_val(0);
++    Value offset = b.i32_val(0);
+     // Extract multi dimensional index for current element
+     auto idx = srcIndices[elemIdx];
+     Value idxCol = idx[outOrder[0]]; // contiguous dimension
+@@ -1293,19 +1453,19 @@ inline DenseMap<unsigned, Value> getSwizzledSharedPtrs(
+     if (outOrder.size() >= 2) {
+       idxRow = idx[outOrder[1]]; // discontiguous dimension
+     } else {
+-      idxRow = i32_val(0);
++      idxRow = b.i32_val(0);
+     }
+     // compute phase = (row // perPhase) % maxPhase
+-    Value phase = urem(udiv(idxRow, i32_val(perPhase)), i32_val(maxPhase));
++    Value phase = b.urem(b.udiv(idxRow, b.i32_val(perPhase)), b.i32_val(maxPhase));
+     // extract dynamic/static offset for immediate offsetting
+     unsigned immedateOffCol = 0;
+     unsigned immedateOffRow = 0;
+     if (leadingDimOffset) {
+       // hopper
+       offset =
+-          mul(udiv(idxCol, numElemsPerSwizzlingRowVal), leadingDimOffsetVal);
++          b.mul(b.udiv(idxCol, numElemsPerSwizzlingRowVal), leadingDimOffsetVal);
+       // Shrink by swizzling blocks
+-      idxCol = urem(idxCol, numElemsPerSwizzlingRowVal);
++      idxCol = b.urem(idxCol, numElemsPerSwizzlingRowVal);
+       strideRow = numElemsPerSwizzlingRowVal;
+     }
+     if (auto add = idxCol.getDefiningOp<LLVM::AddOp>()) {
+@@ -1329,33 +1489,33 @@ inline DenseMap<unsigned, Value> getSwizzledSharedPtrs(
+       }
+     }
+     // row offset is simply row index
+-    Value rowOff = mul(idxRow, strideRow);
++    Value rowOff = b.mul(idxRow, strideRow);
+     // because swizzling happens at a granularity of outVec, we need to
+     // decompose the offset into a swizzled factor and a non-swizzled
+     // (ordered) factor: colOffSwizzled = ((col // outVec) ^ phase) * outVec
+     // colOffOrdered = (col % outVec) // minVec * minVec
+-    Value colOffSwizzled = xor_(udiv(idxCol, i32_val(outVec)), phase);
+-    colOffSwizzled = mul(colOffSwizzled, i32_val(outVec));
+-    Value colOffOrdered = urem(idxCol, i32_val(outVec));
+-    colOffOrdered = udiv(colOffOrdered, i32_val(minVec));
+-    colOffOrdered = mul(colOffOrdered, i32_val(minVec));
+-    Value colOff = add(colOffSwizzled, colOffOrdered);
++    Value colOffSwizzled = b.xor_(b.udiv(idxCol, b.i32_val(outVec)), phase);
++    colOffSwizzled = b.mul(colOffSwizzled, b.i32_val(outVec));
++    Value colOffOrdered = b.urem(idxCol, b.i32_val(outVec));
++    colOffOrdered = b.udiv(colOffOrdered, b.i32_val(minVec));
++    colOffOrdered = b.mul(colOffOrdered, b.i32_val(minVec));
++    Value colOff = b.add(colOffSwizzled, colOffOrdered);
+ 
+     // compute non-immediate offset
+     if (outOrder.size() == 3)
+-      offset = add(offset, mul(idx[outOrder[2]], srcStrides[outOrder[2]]));
+-    offset = add(offset, add(rowOff, mul(colOff, strideCol)));
+-    Value currPtr = gep(dstPtrTy, resElemTy, dstPtrBase, offset);
++      offset = b.add(offset, b.mul(idx[outOrder[2]], srcStrides[outOrder[2]]));
++    offset = b.add(offset, b.add(rowOff, b.mul(colOff, strideCol)));
++    Value currPtr = b.gep(dstPtrTy, resElemTy, dstPtrBase, offset);
+     // compute immediate offset
+     Value immediateOff;
+     if (outOrder.size() >= 2) {
+       immediateOff =
+-          add(mul(i32_val(immedateOffRow), strideRow), i32_val(immedateOffCol));
++          b.add(b.mul(b.i32_val(immedateOffRow), strideRow), b.i32_val(immedateOffCol));
+     } else {
+-      immediateOff = i32_val(immedateOffCol);
++      immediateOff = b.i32_val(immedateOffCol);
+     }
+ 
+-    ret[elemIdx] = gep(dstPtrTy, resElemTy, currPtr, immediateOff);
++    ret[elemIdx] = b.gep(dstPtrTy, resElemTy, currPtr, immediateOff);
+   }
+   return ret;
+ }
+@@ -1375,6 +1535,7 @@ void storeDistributedToShared(MemDescType dstTy, RankedTensorType srcTy,
+ inline Value getStructFromSharedMemoryObject(Location loc,
+                                              const SharedMemoryObject &smemObj,
+                                              RewriterBase &rewriter) {
++  auto b = TritonLLVMOpBuilder(loc, rewriter);
+   auto elems = smemObj.getElems();
+   auto types = smemObj.getTypes();
+   auto structTy =
+@@ -1383,7 +1544,7 @@ inline Value getStructFromSharedMemoryObject(Location loc,
+   Value llvmStruct = rewriter.create<LLVM::UndefOp>(loc, structTy);
+   for (const auto &v : llvm::enumerate(elems)) {
+     assert(v.value() && "can not insert null values");
+-    llvmStruct = insert_val(structTy, llvmStruct, v.value(), v.index());
++    llvmStruct = b.insert_val(structTy, llvmStruct, v.value(), v.index());
+   }
+   return llvmStruct;
+ }
+@@ -1398,9 +1559,10 @@ inline SmallVector<Value> unpackLLElements(Location loc, Value llvmStruct,
    ArrayRef<Type> types =
        cast<LLVM::LLVMStructType>(llvmStruct.getType()).getBody();
    SmallVector<Value> results(types.size());
@@ -748,7 +978,7 @@ index 29b8865c0..bbeec6be0 100644
    }
    return results;
  }
-@@ -1423,6 +1582,7 @@ inline Value packLLElements(Location loc,
+@@ -1423,6 +1585,7 @@ inline Value packLLElements(Location loc,
                     << resultVals.size();
    }
    Value llvmStruct = rewriter.create<LLVM::UndefOp>(loc, structType);
@@ -756,7 +986,7 @@ index 29b8865c0..bbeec6be0 100644
    for (const auto &v : llvm::enumerate(resultVals)) {
      if (!v.value()) {
        emitError(loc)
-@@ -1436,7 +1596,7 @@ inline Value packLLElements(Location loc,
+@@ -1436,7 +1599,7 @@ inline Value packLLElements(Location loc,
                       << elementTypes[v.index()] << " but got "
                       << v.value().getType();
      }
@@ -765,7 +995,7 @@ index 29b8865c0..bbeec6be0 100644
    }
    return llvmStruct;
  }
-@@ -1449,10 +1609,11 @@ inline SmallVector<Value> unpackLLVector(Location loc, Value llvmVec,
+@@ -1449,10 +1612,11 @@ inline SmallVector<Value> unpackLLVector(Location loc, Value llvmVec,
        isa<LLVM::LLVMPointerType>(llvmVec.getType()))
      return {llvmVec};
  
@@ -778,7 +1008,7 @@ index 29b8865c0..bbeec6be0 100644
    }
    return results;
  }
-@@ -1461,9 +1622,10 @@ inline Value packLLVector(Location loc, ValueRange vals,
+@@ -1461,9 +1625,10 @@ inline Value packLLVector(Location loc, ValueRange vals,
                            RewriterBase &rewriter) {
    assert(vals.size() > 0);
    auto vecType = vec_ty(vals[0].getType(), vals.size());
