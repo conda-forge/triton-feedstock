@@ -1,18 +1,19 @@
-{% set version = "3.2.0" %}
-# Triton no longer tags releases, but there are release branches, e.g.
-# https://github.com/triton-lang/triton/commits/release/3.1.x/
-# Check if the commit id from Pytorch's latest pinned commit in
-# https://github.com/pytorch/pytorch/blob/v{{ pytorch_ver }}/.ci/docker/ci_commit_pins/triton.txt
-# can be found on one of those release branches, and use that as the version
-{% set git_commit = "35c6c7c6284582b3f41c71c150e11b517acf074a" %}
-{% set build_number = 0 %}
+context:
+  version: 3.2.0
+  # Triton no longer tags releases, but there are release branches, e.g.
+  # https://github.com/triton-lang/triton/commits/release/3.1.x/
+  # Check if the commit id from Pytorch's latest pinned commit in
+  # https://github.com/pytorch/pytorch/blob/v{{ pytorch_ver }}/.ci/docker/ci_commit_pins/triton.txt
+  # can be found on one of those release branches, and use that as the version
+  git_commit: 35c6c7c6284582b3f41c71c150e11b517acf074a
+  build_number: 0
 
 package:
   name: triton
-  version: {{ version }}
+  version: ${{ version }}
 
 source:
-  url: https://github.com/triton-lang/triton/archive/{{ git_commit }}.tar.gz
+  url: https://github.com/triton-lang/triton/archive/${{ git_commit }}.tar.gz
   sha256: 4ae5d426b118f657e9f3adade363832b9f4aee7f4cb8f1e17abaf837b5e32880
   patches:
     - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
@@ -39,27 +40,28 @@ source:
     - patches/0016-NFC-Remove-dependency-to-cuda-headers-in-Triton-buil.patch
 
 build:
-  number: {{ build_number }}
-  string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+  number: ${{ build_number }}
+  string: cuda${{ cuda_compiler_version | version_to_buildstring }}py${{ python | version_to_buildstring }}h${{ hash }}_${{ build_number }}
   # TODO: CPU-only support still under development
   # No success enabling Windows build as of 3.1.0:
   # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
-  skip: true  # [win or cuda_compiler_version in ("None", "11.8")]
-  ignore_run_exports_from:
-    - llvm
+  skip: win or cuda_compiler_version in ("None", "11.8")
 
 requirements:
   build:
-    - {{ stdlib("c") }}
-    - {{ compiler("cxx") }}
-    - {{ compiler("cuda") }}
+    - ${{ compiler('cxx') }}
+    - ${{ compiler('cuda') }}
+    - ${{ stdlib('c') }}
     - ninja
     - cmake
     - mlir
-    - sed       # [unix]
-    - m2-sed    # [win]
-    - python                                # [build_platform != target_platform]
-    - cross-python_{{ target_platform }}    # [build_platform != target_platform]
+    - if: win
+      then: m2-sed
+      else: sed
+    - if: build_platform != target_platform
+      then:
+        - python
+        - cross-python_${{ target_platform }}
   host:
     - python
     - pybind11
@@ -71,7 +73,7 @@ requirements:
     - zlib
     - nlohmann_json
     - cuda-cupti-dev
-    - cuda-version {{ cuda_compiler_version }}.*
+    - cuda-version ${{ cuda_compiler_version }}.*
   run:
     - python
     - setuptools
@@ -82,24 +84,32 @@ requirements:
     # llvm v20 is not out yet, we must use the rc's; use a manual, channel-specific
     # run-export to avoid that consumers have to add the channel themselves
     - conda-forge/label/llvm_rc::libllvm20
+  ignore_run_exports:
+    from_package:
+      - llvm
 
-test:
-  imports:
-    - triton
-    - triton._C.libtriton
-  requires:
-    - pip
-    - pytest
-    - scipy
-  source_files:
-    - python/test
-  commands:
-    - pip check
-    # test suite essentially depends on availability of a physical GPU,
-    # see https://github.com/openai/triton/issues/466;
-    # run a test that does not require a GPU but checks
-    # if triton.compile() works
-    - pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_ptx
+tests:
+  - if: build_platform == target_platform
+    then:
+      - python:
+          imports:
+            - triton
+            - triton._C.libtriton
+          pip_check: true
+      - files:
+          source:
+            - python/test/
+        requirements:
+          run:
+            - pip
+            - pytest
+            - scipy
+        script:
+          # test suite essentially depends on availability of a physical GPU,
+          # see https://github.com/triton-lang/triton/issues/466;
+          # run a test that does not require a GPU but checks
+          # if triton.compile() works
+          - pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_ptx
 
 about:
   license: MIT
@@ -108,9 +118,9 @@ about:
   description: |
     This is the development repository of Triton, a language and compiler for writing highly efficient custom Deep-Learning primitives.
     The aim of Triton is to provide an open-source environment to write fast code at higher productivity than CUDA, but also with higher flexibility than other existing DSLs.
-  home: https://github.com/triton-lang/triton
-  dev_url: https://github.com/triton-lang/triton
-  doc_url: https://triton-lang.org/
+  homepage: https://github.com/triton-lang/triton
+  repository: https://github.com/triton-lang/triton
+  documentation: https://triton-lang.org/
 
 extra:
   recipe-maintainers:
