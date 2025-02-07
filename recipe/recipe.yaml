@@ -81,12 +81,6 @@ requirements:
     - cuda-cuobjdump
     - cuda-cudart
     - cuda-cupti
-    # llvm v20 is not out yet, we must use the rc's; use a manual, channel-specific
-    # run-export to avoid that consumers have to add the channel themselves
-    - conda-forge/label/llvm_rc::libllvm20
-  ignore_run_exports:
-    from_package:
-      - llvm
 
 tests:
   - if: build_platform == target_platform
