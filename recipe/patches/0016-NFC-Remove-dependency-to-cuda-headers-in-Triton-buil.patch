@@ -1,7 +1,7 @@
 From 47994a88f54e6e210edcbfc981d59630675ca0bc Mon Sep 17 00:00:00 2001
 From: Stephen Huan <stephen.huan@cgdct.moe>
 Date: Thu, 26 Dec 2024 17:39:12 -0800
-Subject: [PATCH 16/16] [NFC] Remove dependency to cuda headers in Triton build
+Subject: [PATCH 16/17] [NFC] Remove dependency to cuda headers in Triton build
  (#5492)
 
 ---

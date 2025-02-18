@@ -1,7 +1,7 @@
 From e47b018d855c7f9587e37dc094b34260446967d9 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
 Date: Thu, 21 Nov 2024 15:02:04 +0100
-Subject: [PATCH 02/16] Do not link directly to LLVM static libraries
+Subject: [PATCH 02/17] Do not link directly to LLVM static libraries
 
 Remove direct linking to LLVM static libraries, use the shared library
 enforced by MLIR instead.  It is incorrect to simultaneously link to

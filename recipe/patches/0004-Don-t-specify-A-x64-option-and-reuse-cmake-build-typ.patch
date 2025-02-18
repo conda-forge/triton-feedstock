@@ -1,7 +1,7 @@
 From af841cd75e411fa7ad071ee04b088df5e31107ec Mon Sep 17 00:00:00 2001
 From: Anatoly Myachev <anatoly.myachev@intel.com>
 Date: Wed, 30 Oct 2024 14:56:52 +0100
-Subject: [PATCH 04/16] Don't specify `-A x64` option and reuse cmake build
+Subject: [PATCH 04/17] Don't specify `-A x64` option and reuse cmake build
  type config for Windows (#5014)
 
 The `-A` argument is not compatible with the Ninja generator.
