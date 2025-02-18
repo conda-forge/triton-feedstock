@@ -45,6 +45,8 @@ build:
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
   # TODO: CPU-only support still under development
   skip: true  # [cuda_compiler_version in ("None", "11.8")]
+  # debug:
+  skip: true  # [not win]
   ignore_run_exports_from:
     - llvm
 
