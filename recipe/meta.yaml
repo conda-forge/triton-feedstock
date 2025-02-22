@@ -5,7 +5,7 @@
 # https://github.com/pytorch/pytorch/blob/v{{ pytorch_ver }}/.ci/docker/ci_commit_pins/triton.txt
 # can be found on one of those release branches, and use that as the version
 {% set git_commit = "35c6c7c6284582b3f41c71c150e11b517acf074a" %}
-{% set build_number = 0 %}
+{% set build = 1 %}
 
 package:
   name: triton
@@ -39,7 +39,7 @@ source:
     - patches/0016-NFC-Remove-dependency-to-cuda-headers-in-Triton-buil.patch
 
 build:
-  number: {{ build_number }}
+  number: {{ build }}
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
   # TODO: CPU-only support still under development
   # No success enabling Windows build as of 3.1.0:
@@ -82,6 +82,8 @@ requirements:
     # llvm v20 is not out yet, we must use the rc's; use a manual, channel-specific
     # run-export to avoid that consumers have to add the channel themselves
     - conda-forge/label/llvm_rc::libllvm20
+    # avoid that people without GPUs needlessly download ~0.5-1GB
+    - __cuda                            # [cuda_compiler_version != "None"]
 
 test:
   imports:
