@@ -6,6 +6,3 @@ mlir:
   - 20
 libmlir:
   - 20
-
-channel_sources:
-  - conda-forge/label/llvm_rc,conda-forge

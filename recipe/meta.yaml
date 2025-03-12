@@ -5,7 +5,7 @@
 # https://github.com/pytorch/pytorch/blob/v{{ pytorch_ver }}/.ci/docker/ci_commit_pins/triton.txt
 # can be found on one of those release branches, and use that as the version
 {% set git_commit = "35c6c7c6284582b3f41c71c150e11b517acf074a" %}
-{% set build_number = 0 %}
+{% set build_number = 1 %}
 
 package:
   name: triton
