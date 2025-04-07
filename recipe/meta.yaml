@@ -1,11 +1,11 @@
-{% set version = "3.2.0" %}
+{% set version = "3.3.0" %}
 # Triton no longer tags releases, but there are release branches, e.g.
 # https://github.com/triton-lang/triton/commits/release/3.1.x/
 # Check if the commit id from Pytorch's latest pinned commit in
 # https://github.com/pytorch/pytorch/blob/v{{ pytorch_ver }}/.ci/docker/ci_commit_pins/triton.txt
 # can be found on one of those release branches, and use that as the version
-{% set git_commit = "35c6c7c6284582b3f41c71c150e11b517acf074a" %}
-{% set build_number = 1 %}
+{% set git_commit = "65c6b88165a169a659935443dafe887f24f1592a" %}
+{% set build_number = 0 %}
 
 package:
   name: triton
@@ -13,7 +13,7 @@ package:
 
 source:
   url: https://github.com/triton-lang/triton/archive/{{ git_commit }}.tar.gz
-  sha256: 4ae5d426b118f657e9f3adade363832b9f4aee7f4cb8f1e17abaf837b5e32880
+  sha256: 76afc9fc97345b6b8d3f3b7dfee3fc34a90633e3b768512488a08c203aa092e4
   patches:
     - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
     - patches/0002-Do-not-link-directly-to-LLVM-static-libraries.patch
