@@ -1,0 +1,48 @@
+From 769fb85a2414c1ab0a08320bb8f0bff7bc7882b7 Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Sat, 11 Jan 2025 22:33:48 -0500
+Subject: [PATCH 4/4] Add conda-forge include dirs to list of include dirs
+ during compilation
+
+---
+ python/triton/runtime/build.py | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/python/triton/runtime/build.py b/python/triton/runtime/build.py
+index 1b76548d4..fd2456081 100644
+--- a/python/triton/runtime/build.py
++++ b/python/triton/runtime/build.py
+@@ -1,5 +1,6 @@
+ import sysconfig
+ import os
++import platform
+ import shutil
+ import subprocess
+ 
+@@ -28,6 +29,26 @@ def _build(name, src, srcdir, library_dirs, include_dirs, libraries):
+     py_include_dir = sysconfig.get_paths(scheme=scheme)["include"]
+     custom_backend_dirs = set(os.getenv(var) for var in ('TRITON_CUDACRT_PATH', 'TRITON_CUDART_PATH'))
+     include_dirs = include_dirs + [srcdir, py_include_dir, *custom_backend_dirs]
++
++    # add conda-forge specific include directories
++    # See packages cuda-cudart-dev on each related platform for the location
++    # of the cuda.h header
++    if platform.system() == "Linux":
++        arch = platform.machine()
++
++        arch_to_directory = {
++            "ppc64le": "targets/ppc64le-linux/include",
++            "aarch64": "targets/sbsa-linux/include",
++            "x86_64": "targets/x86_64-linux/include",
++        }
++
++        arch_dependent_include = arch_to_directory.get(arch, None)
++
++        if arch_dependent_include is not None:
++            include_dirs.append(os.path.join(sys.prefix, arch_dependent_include))
++    elif platform.system() == "Windows":
++        include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
++
+     # for -Wno-psabi, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111047
+     cc_cmd = [cc, src, "-O3", "-shared", "-fPIC", "-Wno-psabi", "-o", so]
+     cc_cmd += [f'-l{lib}' for lib in libraries]

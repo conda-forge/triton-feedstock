@@ -18,25 +18,8 @@ source:
     - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
     - patches/0002-Do-not-link-directly-to-LLVM-static-libraries.patch
     - patches/0003-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
-    # https://github.com/triton-lang/triton/commit/0591b3756bd4143b7163235c0eca4d718948e982
-    - patches/0004-Don-t-specify-A-x64-option-and-reuse-cmake-build-typ.patch
     # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
-    - patches/0005-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
-    # backport https://github.com/triton-lang/triton/pull/5765
-    - patches/0006-release-3.2.x-Get-proper-PTX-version-for-CUDA-12.6.patch
-    # backport patches for lifting llvm/mlir compatibility to(wards) v20, see
-    # https://github.com/triton-lang/triton/commits/main/cmake/llvm-hash.txt
-    - patches/0007-BACKEND-Update-LLVM-hash-5040.patch
-    - patches/0008-BACKEND-Update-llvm-to-llvm-llvm-project-fa57c7a6a5f.patch
-    - patches/0009-Update-to-llvm-llvm-project-bd9145c8c213-5180.patch
-    - patches/0010-LLVM-Update-to-llvm-project-86b69c3-5242.patch
-    - patches/0011-BACKEND-Update-LLVM-version-to-2fe947b4-5540.patch
-    - patches/0012-BACKEND-bump-llvm-to-2f7ade4b-5599.patch
-    - patches/0013-BACKEND-Update-LLVM-version-to-https-github.com-llvm.patch
-    - patches/0014-NFC-replace-TritonGPUToLLVM-Utility.h-macros-with-Tr.patch
-    - patches/0015-BACKEND-bump-to-llvm-llvm-project-c118864223c6-5684.patch
-    # backport https://github.com/triton-lang/triton/pull/5492
-    - patches/0016-NFC-Remove-dependency-to-cuda-headers-in-Triton-buil.patch
+    - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
 
 build:
   number: {{ build_number }}
