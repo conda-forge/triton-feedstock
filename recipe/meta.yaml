@@ -5,6 +5,8 @@
 # https://github.com/pytorch/pytorch/blob/v{{ pytorch_ver }}/.ci/docker/ci_commit_pins/triton.txt
 # can be found on one of those release branches, and use that as the version
 {% set git_commit = "65c6b88165a169a659935443dafe887f24f1592a" %}
+# cmake/llvm-hash.txt
+{% set llvm_commit = "a66376b0dc3b2ea8a84fda26faca287980986f78" %}
 {% set build_number = 0 %}
 
 package:
@@ -12,14 +14,16 @@ package:
   version: {{ version }}
 
 source:
-  url: https://github.com/triton-lang/triton/archive/{{ git_commit }}.tar.gz
-  sha256: 76afc9fc97345b6b8d3f3b7dfee3fc34a90633e3b768512488a08c203aa092e4
-  patches:
-    - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
-    - patches/0002-Do-not-link-directly-to-LLVM-static-libraries.patch
-    - patches/0003-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
-    # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
-    - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
+  - url: https://github.com/triton-lang/triton/archive/{{ git_commit }}.tar.gz
+    sha256: 76afc9fc97345b6b8d3f3b7dfee3fc34a90633e3b768512488a08c203aa092e4
+    patches:
+      - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
+      - patches/0003-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
+      # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
+      - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
+  - url: https://github.com/llvm/llvm-project/archive/{{ llvm_commit }}.tar.gz
+    sha256: 10eb1d36aabbc5d31c9d2af27844f51638d40be28975a4ab20ad13609f7da23d
+    folder: llvm-project
 
 build:
   number: {{ build_number }}
@@ -36,7 +40,6 @@ requirements:
     - {{ compiler("cuda") }}
     - ninja
     - cmake
-    - mlir
     - sed       # [unix]
     - m2-sed    # [win]
     - python                                # [build_platform != target_platform]
@@ -46,10 +49,8 @@ requirements:
     - pybind11
     - pip
     - setuptools
-    - llvm
-    - llvmdev
-    - mlir
     - zlib
+    - zstd  # for llvm
     - nlohmann_json
     - cuda-cupti-dev
     - cuda-version {{ cuda_compiler_version }}.*

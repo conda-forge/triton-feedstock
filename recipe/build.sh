@@ -8,7 +8,6 @@ rm -rf $SRC_DIR/python/triton/third_party
 export TRITON_OFFLINE_BUILD=1
 
 export JSON_SYSPATH=$PREFIX
-export LLVM_SYSPATH=$PREFIX
 export PYBIND11_SYSPATH=$SP_DIR/pybind11
 
 # these don't seem to be actually used, but they prevent downloads
@@ -26,11 +25,23 @@ export MAX_JOBS=$CPU_COUNT
 # no easy way of passing this, not really worth a whole patch
 sed -i -e '/TRITON_BUILD_UT/s:\bON:OFF:' CMakeLists.txt
 
-# LLVM currently does not provide a way to override the tablegen executables,
-# effectively forcing the value of MLIR_TABLEGEN_EXE obtained
-# from MLIRConfig.cmake, that corresponds to PREFIX. Overwrite it to force
-# BUILD_PREFIX.
-sed -i -e '/find_package(MLIR/aset(MLIR_TABLEGEN_EXE "$ENV{BUILD_PREFIX}/bin/mlir-tblgen")' CMakeLists.txt
+# build LLVM first
+cmake -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLVM_BUILD_UTILS=OFF \
+    -DLLVM_BUILD_TOOLS=OFF \
+    -DLLD_BUILD_TOOLS=OFF \
+    -DLLVM_BUILD_TELEMETRY=OFF \
+    -DLLVM_ENABLE_PROJECTS="mlir;lld" \
+    -DLLVM_TARGETS_TO_BUILD="host;NVPTX;AMDGPU" \
+    -DLLVM_ENABLE_TERMINFO=OFF \
+    -Bllvm-project/build \
+    llvm-project/llvm
+cmake --build llvm-project/build -j "${MAX_JOBS}"
+
+export LLVM_SYSPATH=$PWD/llvm-project/build
+export LLVM_INCLUDE_DIRS=$LLVM_SYSPATH/include
+export LLVM_LIBRARY_DIR=$LLVM_SYSPATH/lib
 
 cd python
 $PYTHON -m pip install . -vv
