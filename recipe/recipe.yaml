@@ -1,0 +1,108 @@
+context:
+  version: 3.3.0
+  # Triton no longer tags releases, but there are release branches, e.g.
+  # https://github.com/triton-lang/triton/commits/release/3.1.x/
+  # Check if the commit id from Pytorch's latest pinned commit in
+  # https://github.com/pytorch/pytorch/blob/v{{ pytorch_ver }}/.ci/docker/ci_commit_pins/triton.txt
+  # can be found on one of those release branches, and use that as the version
+  git_commit: 65c6b88165a169a659935443dafe887f24f1592a
+  # cmake/llvm-hash.txt
+  llvm_commit: a66376b0dc3b2ea8a84fda26faca287980986f78
+  build_number: 0
+
+package:
+  name: triton
+  version: ${{ version }}
+
+source:
+  - url: https://github.com/triton-lang/triton/archive/${{ git_commit }}.tar.gz
+    sha256: 76afc9fc97345b6b8d3f3b7dfee3fc34a90633e3b768512488a08c203aa092e4
+    patches:
+      - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
+      # uncomment if we decide to link dynamically again
+      # - patches/0002-Do-not-link-directly-to-LLVM-static-libraries.patch
+      - patches/0003-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
+      # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
+      - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
+  - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
+    sha256: 10eb1d36aabbc5d31c9d2af27844f51638d40be28975a4ab20ad13609f7da23d
+    target_directory: llvm-project
+
+build:
+  number: ${{ build_number }}
+  string: cuda${{ cuda_compiler_version | version_to_buildstring }}py${{ python | version_to_buildstring }}h${{ hash }}_${{ build_number }}
+  # TODO: CPU-only support still under development
+  # No success enabling Windows build as of 3.1.0:
+  # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
+  skip: win or cuda_compiler_version in ("None", "11.8")
+
+requirements:
+  build:
+    - ${{ compiler('cxx') }}
+    - ${{ compiler('cuda') }}
+    - ${{ stdlib('c') }}
+    - ninja
+    - cmake
+    - if: win
+      then: m2-sed
+      else: sed
+    - if: build_platform != target_platform
+      then:
+        - python
+        - cross-python_${{ target_platform }}
+  host:
+    - python
+    - pybind11
+    - pip
+    - setuptools
+    - zlib
+    - zstd  # for llvm
+    - nlohmann_json
+    - cuda-cupti-dev
+    - cuda-version ${{ cuda_compiler_version }}.*
+  run:
+    - python
+    - setuptools
+    - cuda-nvcc-tools
+    - cuda-cuobjdump
+    - cuda-cudart
+    - cuda-cupti
+
+tests:
+  - if: build_platform == target_platform
+    then:
+      - python:
+          imports:
+            - triton
+            - triton._C.libtriton
+          pip_check: true
+      - files:
+          source:
+            - python/test/
+        requirements:
+          run:
+            - pip
+            - pytest
+            - scipy
+        script:
+          # test suite essentially depends on availability of a physical GPU,
+          # see https://github.com/triton-lang/triton/issues/466;
+          # run a test that does not require a GPU but checks
+          # if triton.compile() works
+          - pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_ptx
+
+about:
+  license: MIT
+  license_file: LICENSE
+  summary: Development repository for the Triton language and compiler
+  description: |
+    This is the development repository of Triton, a language and compiler for writing highly efficient custom Deep-Learning primitives.
+    The aim of Triton is to provide an open-source environment to write fast code at higher productivity than CUDA, but also with higher flexibility than other existing DSLs.
+  homepage: https://github.com/triton-lang/triton
+  repository: https://github.com/triton-lang/triton
+  documentation: https://triton-lang.org/
+
+extra:
+  recipe-maintainers:
+    - h-vetinari
+    - mgorny
