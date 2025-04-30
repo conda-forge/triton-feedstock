@@ -1,5 +1,5 @@
 context:
-  version: 3.2.0
+  version: 3.3.0
   # Triton no longer tags releases, but there are release branches, e.g.
   # https://github.com/triton-lang/triton/commits/release/3.1.x/
   # Check if the commit id from Pytorch's latest pinned commit in
@@ -19,6 +19,8 @@ source:
     sha256: 76afc9fc97345b6b8d3f3b7dfee3fc34a90633e3b768512488a08c203aa092e4
     patches:
       - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
+      # uncomment if we decide to link dynamically again
+      # - patches/0002-Do-not-link-directly-to-LLVM-static-libraries.patch
       - patches/0003-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
       # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
