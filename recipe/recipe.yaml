@@ -8,7 +8,7 @@ context:
   git_commit: 65c6b88165a169a659935443dafe887f24f1592a
   # cmake/llvm-hash.txt
   llvm_commit: a66376b0dc3b2ea8a84fda26faca287980986f78
-  build_number: 0
+  build_number: 1
 
 package:
   name: triton
