@@ -1,7 +1,7 @@
 context:
   version: "3.3.1"
   # cmake/llvm-hash.txt
-  llvm_commit: e12cbd8339b89563059c2bb2a312579b652560d0
+  llvm_commit: a66376b0dc3b2ea8a84fda26faca287980986f78
   build_number: 0
 
 package:
@@ -19,7 +19,7 @@ source:
       # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
-    sha256: 196c49229b875b5d5e1745618d67b1d9887074ca48679e92d46502e928b9bcea
+    sha256: 10eb1d36aabbc5d31c9d2af27844f51638d40be28975a4ab20ad13609f7da23d
     target_directory: llvm-project
 
 build:
