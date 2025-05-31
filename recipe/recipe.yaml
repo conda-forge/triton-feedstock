@@ -1,5 +1,5 @@
 context:
-  version: 3.3.0
+  version: "3.3.1"
   # Triton no longer tags releases, but there are release branches, e.g.
   # https://github.com/triton-lang/triton/commits/release/3.1.x/
   # Check if the commit id from Pytorch's latest pinned commit in
@@ -8,7 +8,7 @@ context:
   git_commit: 65c6b88165a169a659935443dafe887f24f1592a
   # cmake/llvm-hash.txt
   llvm_commit: a66376b0dc3b2ea8a84fda26faca287980986f78
-  build_number: 1
+  build_number: 0
 
 package:
   name: triton
