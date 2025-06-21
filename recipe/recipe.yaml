@@ -2,7 +2,7 @@ context:
   version: "3.3.1"
   # cmake/llvm-hash.txt
   llvm_commit: a66376b0dc3b2ea8a84fda26faca287980986f78
-  build_number: 0
+  build_number: 1
 
 package:
   name: triton
@@ -18,6 +18,8 @@ source:
       - patches/0003-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
       # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
+      # backport (relevant parts of) https://github.com/triton-lang/triton/pull/6928
+      - patches/0005-fixes-definition-of-PY_SSIZE_T_CLEAN-macro.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
     sha256: 10eb1d36aabbc5d31c9d2af27844f51638d40be28975a4ab20ad13609f7da23d
     target_directory: llvm-project
