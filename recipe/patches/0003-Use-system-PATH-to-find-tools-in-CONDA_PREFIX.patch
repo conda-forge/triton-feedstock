@@ -1,7 +1,7 @@
-From ce626d7727aaeb89f8435708557aa36aae6487eb Mon Sep 17 00:00:00 2001
+From 9f893340cd1b66b3f9f4fdde10f607d21c9b321d Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
 Date: Tue, 26 Nov 2024 11:58:06 +0100
-Subject: [PATCH 3/4] Use system PATH to find tools (in CONDA_PREFIX)
+Subject: [PATCH 3/5] Use system PATH to find tools (in CONDA_PREFIX)
 
 ---
  python/triton/backends/compiler.py     | 2 ++

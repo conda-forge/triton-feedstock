@@ -1,7 +1,7 @@
-From c3dea336d591b0e3ce656217fe41aefd6d0b6487 Mon Sep 17 00:00:00 2001
+From f038196fcce641dfe63abd683c02f25380af2ea3 Mon Sep 17 00:00:00 2001
 From: Mark Harfouche <mark.harfouche@gmail.com>
 Date: Sat, 11 Jan 2025 22:33:48 -0500
-Subject: [PATCH 4/4] Add conda-forge include dirs to list of include dirs
+Subject: [PATCH 4/5] Add conda-forge include dirs to list of include dirs
  during compilation
 
 ---
