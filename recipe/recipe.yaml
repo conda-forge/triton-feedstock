@@ -1,8 +1,8 @@
 context:
-  version: "3.3.1"
+  version: "3.4.0"
   # cmake/llvm-hash.txt
   llvm_commit: a66376b0dc3b2ea8a84fda26faca287980986f78
-  build_number: 2
+  build_number: 0
 
 package:
   name: triton
@@ -10,7 +10,7 @@ package:
 
 source:
   - url: https://github.com/triton-lang/triton/archive/v${{ version }}.tar.gz
-    sha256: 9dc77d9205933bf2fc05eb054f4f1d92acd79a963826174d57fe9cfd58ba367b
+    sha256: a96e87a911794c907fab30e0c7a3f96ef4e9e8fdc8812cd8bbc6f0457619072f
     patches:
       - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
       # uncomment if we decide to link dynamically again
