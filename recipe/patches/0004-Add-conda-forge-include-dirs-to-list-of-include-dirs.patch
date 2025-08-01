@@ -1,31 +1,31 @@
-From f038196fcce641dfe63abd683c02f25380af2ea3 Mon Sep 17 00:00:00 2001
+From faa725cc77ae218d0a724fb030664b8ebc47ecbe Mon Sep 17 00:00:00 2001
 From: Mark Harfouche <mark.harfouche@gmail.com>
 Date: Sat, 11 Jan 2025 22:33:48 -0500
 Subject: [PATCH 4/5] Add conda-forge include dirs to list of include dirs
  during compilation
 
 ---
- python/triton/runtime/build.py | 24 +++++++++++++++++++++++-
- 1 file changed, 23 insertions(+), 1 deletion(-)
+ python/triton/runtime/build.py | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
 diff --git a/python/triton/runtime/build.py b/python/triton/runtime/build.py
-index 1b76548d4..fd4b5322f 100644
+index 2d0899603..e89f48877 100644
 --- a/python/triton/runtime/build.py
 +++ b/python/triton/runtime/build.py
-@@ -1,7 +1,9 @@
--import sysconfig
+@@ -5,8 +5,10 @@ import hashlib
+ import importlib.util
+ import logging
  import os
 +import platform
  import shutil
  import subprocess
 +import sys
-+import sysconfig
+ import sysconfig
+ import tempfile
  
- 
- def _build(name, src, srcdir, library_dirs, include_dirs, libraries):
-@@ -28,6 +30,26 @@ def _build(name, src, srcdir, library_dirs, include_dirs, libraries):
+@@ -43,6 +45,26 @@ def _build(name: str, src: str, srcdir: str, library_dirs: list[str], include_di
      py_include_dir = sysconfig.get_paths(scheme=scheme)["include"]
-     custom_backend_dirs = set(os.getenv(var) for var in ('TRITON_CUDACRT_PATH', 'TRITON_CUDART_PATH'))
+     custom_backend_dirs = knobs.build.backend_dirs
      include_dirs = include_dirs + [srcdir, py_include_dir, *custom_backend_dirs]
 +
 +    # add conda-forge specific include directories
