@@ -59,7 +59,7 @@ if [[ ${HOST} != ${TARGET} ]]; then
     )
 
     cmake -G Ninja "${CMAKE_BUILD_ARGS[@]}" \
-        -Bllvm-project/build-native llvm-project/llvm
+        -Bllvm-project/build-native -Sllvm-project/llvm
     cmake --build llvm-project/build-native -j "${MAX_JOBS}" \
         -t "${NATIVE_EXECUTABLES[@]}"
 
@@ -74,7 +74,7 @@ if [[ ${HOST} != ${TARGET} ]]; then
 fi
 
 cmake -G Ninja "${CMAKE_HOST_ARGS[@]}" \
-    -Bllvm-project/build llvm-project/llvm
+    -Bllvm-project/build -Sllvm-project/llvm
 cmake --build llvm-project/build -j "${MAX_JOBS}"
 
 export LLVM_SYSPATH=$PWD/llvm-project/build
