@@ -81,5 +81,4 @@ export LLVM_SYSPATH=$PWD/llvm-project/build
 export LLVM_INCLUDE_DIRS=$LLVM_SYSPATH/include
 export LLVM_LIBRARY_DIR=$LLVM_SYSPATH/lib
 
-cd python
 $PYTHON -m pip install . -vv
