@@ -40,7 +40,7 @@ CMAKE_HOST_ARGS=(
 )
 
 # build LLVM first
-if [[ ${HOST} != ${TARGET} ]]; then
+if [[ ${HOST} != ${BUILD} ]]; then
     CMAKE_BUILD_ARGS=(
         -DCMAKE_C_COMPILER="${CC_FOR_BUILD}"
         -DCMAKE_CXX_COMPILER="${CXX_FOR_BUILD}"
