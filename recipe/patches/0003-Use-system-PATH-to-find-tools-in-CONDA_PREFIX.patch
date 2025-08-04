@@ -1,4 +1,4 @@
-From 5dcbab22f7eca6d1260e257cc09078fd8834eed0 Mon Sep 17 00:00:00 2001
+From 555b7e69d6fc4822b01386a24e2e84c46ac4c244 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@quansight.com>
 Date: Fri, 1 Aug 2025 13:31:58 +0200
 Subject: [PATCH 3/5] Use system PATH to find tools (in CONDA_PREFIX)
@@ -8,7 +8,7 @@ Subject: [PATCH 3/5] Use system PATH to find tools (in CONDA_PREFIX)
  1 file changed, 2 insertions(+)
 
 diff --git a/python/triton/knobs.py b/python/triton/knobs.py
-index 30804b170..f26070d6c 100644
+index 30804b170..014e612bb 100644
 --- a/python/triton/knobs.py
 +++ b/python/triton/knobs.py
 @@ -3,6 +3,7 @@ from __future__ import annotations
@@ -23,7 +23,7 @@ index 30804b170..f26070d6c 100644
              # We still add default as fallback in case the pointed binary isn't
              # accessible.
              self.default(),
-+            shutil.which(binary),
++            shutil.which(self.binary),
          ]
          for path in paths:
              if not path or not os.access(path, os.X_OK):
