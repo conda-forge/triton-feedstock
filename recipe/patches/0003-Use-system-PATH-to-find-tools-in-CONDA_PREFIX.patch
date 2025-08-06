@@ -1,49 +1,29 @@
-From 9f893340cd1b66b3f9f4fdde10f607d21c9b321d Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
-Date: Tue, 26 Nov 2024 11:58:06 +0100
+From 555b7e69d6fc4822b01386a24e2e84c46ac4c244 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@quansight.com>
+Date: Fri, 1 Aug 2025 13:31:58 +0200
 Subject: [PATCH 3/5] Use system PATH to find tools (in CONDA_PREFIX)
 
 ---
- python/triton/backends/compiler.py     | 2 ++
- third_party/nvidia/backend/compiler.py | 2 ++
- 2 files changed, 4 insertions(+)
+ python/triton/knobs.py | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/python/triton/backends/compiler.py b/python/triton/backends/compiler.py
-index 3583429de..b27849d8d 100644
---- a/python/triton/backends/compiler.py
-+++ b/python/triton/backends/compiler.py
-@@ -1,5 +1,6 @@
+diff --git a/python/triton/knobs.py b/python/triton/knobs.py
+index 30804b170..014e612bb 100644
+--- a/python/triton/knobs.py
++++ b/python/triton/knobs.py
+@@ -3,6 +3,7 @@ from __future__ import annotations
+ import importlib
  import os
  import re
 +import shutil
  import subprocess
  import sysconfig
- from abc import ABCMeta, abstractmethod
-@@ -30,6 +31,7 @@ class BaseBackend(metaclass=ABCMeta):
-         paths = [
-             os.environ.get(f"TRITON_{binary.upper()}_PATH", ""),
-             os.path.join(base_dir, "third_party", "cuda", "bin", binary),
-+            shutil.which(binary),
+ 
+@@ -202,6 +203,7 @@ class env_nvidia_tool(env_base[str, NvidiaTool]):
+             # We still add default as fallback in case the pointed binary isn't
+             # accessible.
+             self.default(),
++            shutil.which(self.binary),
          ]
          for path in paths:
-             if os.path.exists(path) and os.path.isfile(path):
-diff --git a/third_party/nvidia/backend/compiler.py b/third_party/nvidia/backend/compiler.py
-index 6db76a352..3659321b5 100644
---- a/third_party/nvidia/backend/compiler.py
-+++ b/third_party/nvidia/backend/compiler.py
-@@ -13,6 +13,7 @@ import signal
- import os
- import subprocess
- from pathlib import Path
-+import shutil
- import sysconfig
- 
- 
-@@ -36,6 +37,7 @@ def _path_to_binary(binary: str):
-     paths = [
-         os.environ.get(f"TRITON_{binary.upper()}_PATH", ""),
-         os.path.join(os.path.dirname(__file__), "bin", binary),
-+        shutil.which(binary),
-     ]
- 
-     for path in paths:
+             if not path or not os.access(path, os.X_OK):

@@ -28,7 +28,7 @@ sed -i -e '/TRITON_BUILD_UT/s:\bON:OFF:' CMakeLists.txt
 
 CMAKE_HOST_ARGS=(
     -DCMAKE_BUILD_TYPE=Release
-    -DLLVM_BUILD_UTILS=OFF
+    -DLLVM_BUILD_UTILS=ON
     -DLLVM_BUILD_TOOLS=OFF
     -DLLD_BUILD_TOOLS=OFF
     -DLLVM_BUILD_TELEMETRY=OFF
@@ -37,10 +37,11 @@ CMAKE_HOST_ARGS=(
     -DLLVM_ENABLE_TERMINFO=OFF
     -DLLVM_INCLUDE_TESTS=OFF
     -DMLIR_INCLUDE_TESTS=OFF
+    ${TRITON_BUILD_WITH_CCACHE:+-DLLVM_CCACHE_BUILD=ON}
 )
 
 # build LLVM first
-if [[ ${HOST} != ${TARGET} ]]; then
+if [[ ${HOST} != ${BUILD} ]]; then
     CMAKE_BUILD_ARGS=(
         -DCMAKE_C_COMPILER="${CC_FOR_BUILD}"
         -DCMAKE_CXX_COMPILER="${CXX_FOR_BUILD}"
@@ -49,6 +50,7 @@ if [[ ${HOST} != ${TARGET} ]]; then
         -DLLVM_ENABLE_LIBXML2=OFF
         -DLLVM_ENABLE_ZLIB=OFF
         -DLLVM_ENABLE_PROJECTS="mlir"
+        ${TRITON_BUILD_WITH_CCACHE:+-DLLVM_CCACHE_BUILD=ON}
     )
     NATIVE_EXECUTABLES=(
         llvm-tblgen
@@ -59,7 +61,7 @@ if [[ ${HOST} != ${TARGET} ]]; then
     )
 
     cmake -G Ninja "${CMAKE_BUILD_ARGS[@]}" \
-        -Bllvm-project/build-native llvm-project/llvm
+        -Bllvm-project/build-native -Sllvm-project/llvm
     cmake --build llvm-project/build-native -j "${MAX_JOBS}" \
         -t "${NATIVE_EXECUTABLES[@]}"
 
@@ -74,12 +76,11 @@ if [[ ${HOST} != ${TARGET} ]]; then
 fi
 
 cmake -G Ninja "${CMAKE_HOST_ARGS[@]}" \
-    -Bllvm-project/build llvm-project/llvm
+    -Bllvm-project/build -Sllvm-project/llvm
 cmake --build llvm-project/build -j "${MAX_JOBS}"
 
 export LLVM_SYSPATH=$PWD/llvm-project/build
 export LLVM_INCLUDE_DIRS=$LLVM_SYSPATH/include
 export LLVM_LIBRARY_DIR=$LLVM_SYSPATH/lib
 
-cd python
 $PYTHON -m pip install . -vv
