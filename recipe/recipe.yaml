@@ -2,7 +2,7 @@ context:
   version: "3.4.0"
   # cmake/llvm-hash.txt
   llvm_commit: 8957e64a20fc7f4277565c6cfe3e555c119783ce
-  build_number: 0
+  build_number: 1
 
 package:
   name: triton
