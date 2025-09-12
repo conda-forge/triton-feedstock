@@ -1,7 +1,7 @@
-From 7b810e558ea7fce9e19356c634feb41167127119 Mon Sep 17 00:00:00 2001
+From 745c1e3366b89919a7dbeafa0ebce721a4c0c7e1 Mon Sep 17 00:00:00 2001
 From: Aditya Mayukh Som <adi.kg2@gmail.com>
 Date: Sat, 24 May 2025 20:05:24 +0000
-Subject: [PATCH 5/5] fixes definition of PY_SSIZE_T_CLEAN macro
+Subject: [PATCH 5/6] fixes definition of PY_SSIZE_T_CLEAN macro
 
 [removed unnecessary changes]
 
@@ -11,10 +11,10 @@ Co-Authored-By: H. Vetinari <h.vetinari@gmx.com>
  1 file changed, 1 insertion(+)
 
 diff --git a/third_party/nvidia/backend/driver.py b/third_party/nvidia/backend/driver.py
-index 5f2621ae5..3c59f2df5 100644
+index 47544bd8e..f0c487c27 100644
 --- a/third_party/nvidia/backend/driver.py
 +++ b/third_party/nvidia/backend/driver.py
-@@ -196,6 +196,7 @@ def make_launcher(constants, signature):
+@@ -256,6 +256,7 @@ def make_launcher(constants, signature, tensordesc_meta):
      params = [f"&arg{i}" for i, ty in signature.items() if ty != "constexpr"]
      params.append("&global_scratch")
      src = f"""
