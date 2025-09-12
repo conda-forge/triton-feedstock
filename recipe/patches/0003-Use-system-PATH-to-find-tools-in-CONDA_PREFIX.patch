@@ -1,7 +1,7 @@
-From 555b7e69d6fc4822b01386a24e2e84c46ac4c244 Mon Sep 17 00:00:00 2001
+From 163fd943e71579b56cd830085945733875a268d8 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@quansight.com>
 Date: Fri, 1 Aug 2025 13:31:58 +0200
-Subject: [PATCH 3/5] Use system PATH to find tools (in CONDA_PREFIX)
+Subject: [PATCH 3/6] Use system PATH to find tools (in CONDA_PREFIX)
 
 ---
  python/triton/knobs.py | 2 ++

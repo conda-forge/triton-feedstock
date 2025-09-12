@@ -1,0 +1,51 @@
+From ee5f6d96b0e6b34946b050cbae369338d4eafe06 Mon Sep 17 00:00:00 2001
+From: Clive Unger <clive.unger@gmail.com>
+Date: Wed, 2 Jul 2025 17:37:54 -0500
+Subject: [PATCH 6/6] Handle new cuda versions (#7384)
+
+Small update to automatically handle when a newer version of cuda is
+being used.
+
+# New contributor declaration
+- [x] I am not making a trivial change, such as fixing a typo in a
+comment.
+
+- [x] I have written a PR description following these
+  [rules](https://cbea.ms/git-commit/#why-not-how).
+
+- [x] I have run `pre-commit run --from-ref origin/main --to-ref HEAD`.
+
+- Select one of the following.
+  - [ ] I have added tests.
+    - `/test` for `lit` tests
+    - `/unittest` for C++ tests
+    - `/python/test` for end-to-end tests
+  - [x] This PR does not need a test because `modifying install logic`.
+
+- Select one of the following.
+  - [x] I have not added any `lit` tests.
+- [ ] The `lit` tests I have added follow these [best
+practices](https://mlir.llvm.org/getting_started/TestingGuide/#filecheck-best-practices),
+including the "tests should be minimal" section. (Usually running Python
+code
+    and using the instructions it generates is not minimal.)
+---
+ third_party/nvidia/backend/compiler.py | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/third_party/nvidia/backend/compiler.py b/third_party/nvidia/backend/compiler.py
+index d01a5dcee..d3a262a5d 100644
+--- a/third_party/nvidia/backend/compiler.py
++++ b/third_party/nvidia/backend/compiler.py
+@@ -59,6 +59,11 @@ def ptx_get_version(cuda_version) -> int:
+         return 70 + minor
+     if major == 10:
+         return 63 + minor
++
++    if major >= 13:
++        base_ptx = 90
++        return base_ptx + (major - 13) * 10 + minor
++
+     raise RuntimeError("Triton only support CUDA 10.0 or higher, but got CUDA version: " + cuda_version)
+ 
+ 

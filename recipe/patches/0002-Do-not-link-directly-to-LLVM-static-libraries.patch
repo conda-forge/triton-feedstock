@@ -1,7 +1,7 @@
-From 116f1f5cd080f99e946bedb748e6e5b25613c893 Mon Sep 17 00:00:00 2001
+From 6302a0507dd6a281ce788c0d42358137ce31ec1d Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
 Date: Thu, 21 Nov 2024 15:02:04 +0100
-Subject: [PATCH 2/5] Do not link directly to LLVM static libraries
+Subject: [PATCH 2/6] Do not link directly to LLVM static libraries
 
 Remove direct linking to LLVM static libraries, use the shared library
 enforced by MLIR instead.  It is incorrect to simultaneously link to
@@ -17,10 +17,10 @@ LLVM library, remove direct linking to static libraries.
  2 files changed, 33 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index d8cadd8bf..d72559502 100644
+index df8bcf182..9278fc109 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -237,37 +237,10 @@ if(TRITON_BUILD_PYTHON_MODULE)
+@@ -236,37 +236,10 @@ if(TRITON_BUILD_PYTHON_MODULE)
      MLIRGPUToROCDLTransforms
      MLIRUBToLLVM
  
@@ -59,7 +59,7 @@ index d8cadd8bf..d72559502 100644
    # Define triton library
    string(JOIN "," TRITON_BACKENDS_TUPLE ${TRITON_CODEGEN_BACKENDS})
 diff --git a/bin/CMakeLists.txt b/bin/CMakeLists.txt
-index 7ed6d6270..cc1124fcc 100644
+index 94c9492db..36d3edf54 100644
 --- a/bin/CMakeLists.txt
 +++ b/bin/CMakeLists.txt
 @@ -72,12 +72,6 @@ add_llvm_executable(triton-llvm-opt
