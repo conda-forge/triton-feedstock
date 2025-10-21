@@ -1,0 +1,48 @@
+From ff21a9bb9376605f472e946e38fbfc0c8a8c4669 Mon Sep 17 00:00:00 2001
+From: joehutcheson <63621767+joehutcheson@users.noreply.github.com>
+Date: Mon, 22 Sep 2025 21:45:07 +0100
+Subject: [PATCH 6/6] [PROTON] Conditionally include Proton tests (#8237)
+
+Adds a condition on `TRITON_BUILD_UT` before including Proton tests.
+
+When `TRITON_BUILD_UT` is `OFF` without adding this condition, a build
+failure occurs. This is because the Proton tests cmake calls the
+`add_triton_ut` function, however this function is not declared when
+`TRITON_BUILD_UT` is `OFF`.
+
+# New contributor declaration
+- [x] I am not making a trivial change, such as fixing a typo in a
+comment.
+
+- [x] I have written a PR description following these
+  [rules](https://cbea.ms/git-commit/#why-not-how).
+
+- [x] I have run `pre-commit run --from-ref origin/main --to-ref HEAD`.
+
+- Select one of the following.
+  - [ ] I have added tests.
+    - `/test` for `lit` tests
+    - `/unittest` for C++ tests
+    - `/python/test` for end-to-end tests
+  - [x] This PR does not need a test because it's a build bug fix.
+
+- Select one of the following.
+  - [x] I have not added any `lit` tests.
+- [ ] The `lit` tests I have added follow these [best
+practices](https://mlir.llvm.org/getting_started/TestingGuide/#filecheck-best-practices),
+including the "tests should be minimal" section. (Usually running Python
+code
+    and using the instructions it generates is not minimal.)
+---
+ third_party/proton/test/CMakeLists.txt | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/third_party/proton/test/CMakeLists.txt b/third_party/proton/test/CMakeLists.txt
+index e250d49f2..5b05b0894 100644
+--- a/third_party/proton/test/CMakeLists.txt
++++ b/third_party/proton/test/CMakeLists.txt
+@@ -1 +1,3 @@
+-add_subdirectory(unittest)
++if(TRITON_BUILD_UT)
++  add_subdirectory(unittest)
++endif()
