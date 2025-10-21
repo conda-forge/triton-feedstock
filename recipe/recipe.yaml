@@ -1,8 +1,8 @@
 context:
-  version: "3.4.0"
+  version: "3.5.0"
   # cmake/llvm-hash.txt
-  llvm_commit: 8957e64a20fc7f4277565c6cfe3e555c119783ce
-  build_number: 1
+  llvm_commit: 7d5de3033187c8a3bb4d2e322f5462cdaf49808f
+  build_number: 0
 
 package:
   name: triton
@@ -10,7 +10,7 @@ package:
 
 source:
   - url: https://github.com/triton-lang/triton/releases/download/v${{ version }}/triton-${{ version }}.tar.gz
-    sha256: 019221ceede5ed482b1856c7e47dc8c88eb7a6d1c187ffa70c0875d86c62ed17
+    sha256: a812f387de09277623ccd58af477f2ae9fc6e028ccfadf4b13919af441b59928
     patches:
       - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
       # uncomment if we decide to link dynamically again
@@ -23,7 +23,7 @@ source:
       # backport (relevant parts of) https://github.com/triton-lang/triton/pull/7695
       - patches/0006-Add-python-3.14-wheel-build-7695.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
-    sha256: ce58b941eb8a4495c6797d0c891c18a201e832b7dbd2ab8007d827d27b36f5ce
+    sha256: 917b162698967d9fb8e3aadec09d362282cf03cc254ce4c167e265437ae1507c
     target_directory: llvm-project
 
 build:
