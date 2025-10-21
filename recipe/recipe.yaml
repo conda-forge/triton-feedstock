@@ -82,12 +82,15 @@ tests:
             - pip
             - pytest
             - scipy
+            # use cpu* variant to avoid the pin on specific triton version
+            # (also we're doing non-GPU testing)
+            - pytorch * cpu*
         script:
           # test suite essentially depends on availability of a physical GPU,
           # see https://github.com/triton-lang/triton/issues/466;
           # run a test that does not require a GPU but checks
           # if triton.compile() works
-          - pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_ptx
+          - TRITON_INTERPRET=1 pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
 
 about:
   license: MIT
