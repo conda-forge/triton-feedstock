@@ -61,8 +61,6 @@ requirements:
   run:
     - python
     - setuptools
-    - if: match(python, "<3.10")
-      then: importlib-metadata
     - cuda-nvcc-tools
     - cuda-cuobjdump
     - cuda-cudart
