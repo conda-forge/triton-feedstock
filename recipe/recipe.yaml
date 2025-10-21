@@ -20,8 +20,6 @@ source:
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
       # backport (relevant parts of) https://github.com/triton-lang/triton/pull/6928
       - patches/0005-fixes-definition-of-PY_SSIZE_T_CLEAN-macro.patch
-      # backport (relevant parts of) https://github.com/triton-lang/triton/pull/7695
-      - patches/0006-Add-python-3.14-wheel-build-7695.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
     sha256: 917b162698967d9fb8e3aadec09d362282cf03cc254ce4c167e265437ae1507c
     target_directory: llvm-project
