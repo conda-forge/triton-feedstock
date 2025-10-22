@@ -67,7 +67,8 @@ requirements:
     - cuda-cupti
 
 tests:
-  - if: build_platform == target_platform
+  # tests skipped on py3.14 until pytorch is rebuilt
+  - if: build_platform == target_platform and match(python, '<3.14')
     then:
       - python:
           imports:
