@@ -1,17 +1,17 @@
-From 555b7e69d6fc4822b01386a24e2e84c46ac4c244 Mon Sep 17 00:00:00 2001
+From 602f2fa131453be86525be7844a7a0abe6e01ef9 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@quansight.com>
 Date: Fri, 1 Aug 2025 13:31:58 +0200
 Subject: [PATCH 3/5] Use system PATH to find tools (in CONDA_PREFIX)
 
 ---
- python/triton/knobs.py | 2 ++
- 1 file changed, 2 insertions(+)
+ python/triton/knobs.py | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/python/triton/knobs.py b/python/triton/knobs.py
-index 30804b170..014e612bb 100644
+index 161f739bd..d492b3a46 100644
 --- a/python/triton/knobs.py
 +++ b/python/triton/knobs.py
-@@ -3,6 +3,7 @@ from __future__ import annotations
+@@ -4,6 +4,7 @@ import functools
  import importlib
  import os
  import re
@@ -19,11 +19,15 @@ index 30804b170..014e612bb 100644
  import subprocess
  import sysconfig
  
-@@ -202,6 +203,7 @@ class env_nvidia_tool(env_base[str, NvidiaTool]):
-             # We still add default as fallback in case the pointed binary isn't
-             # accessible.
-             self.default(),
-+            shutil.which(self.binary),
-         ]
+@@ -204,9 +205,9 @@ class env_nvidia_tool(env_base[str, NvidiaTool]):
+         # We still add default as fallback in case the pointed binary isn't
+         # accessible.
+         if path is not None:
+-            paths = [path, self.default_path]
++            paths = [path, self.default_path, shutil.which(self.binary)]
+         else:
+-            paths = [self.default_path]
++            paths = [self.default_path, shutil.which(self.binary)]
+ 
          for path in paths:
-             if not path or not os.access(path, os.X_OK):
+             if tool := NvidiaTool.from_path(path):
