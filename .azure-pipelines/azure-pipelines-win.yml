@@ -19,8 +19,7 @@ jobs:
 
   steps:
 
-    - displayName: Resize all partitions to maximum
-      script: |
+    - pwsh: |
         Write-Output "=== RESIZING PARTITIONS ==="
         $disks = Get-Disk | Where-Object PartitionStyle -ne 'RAW'
 
@@ -40,7 +39,8 @@ jobs:
                 }
             }
         }
-        
+      displayName: Resize all partitions to maximum
+
     - script: |
         call ".scripts\run_win_build.bat"
       displayName: Run Windows build
