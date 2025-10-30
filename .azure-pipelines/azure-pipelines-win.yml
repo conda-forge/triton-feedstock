@@ -19,6 +19,28 @@ jobs:
 
   steps:
 
+    - displayName: Resize all partitions to maximum
+      script: |
+        Write-Output "=== RESIZING PARTITIONS ==="
+        $disks = Get-Disk | Where-Object PartitionStyle -ne 'RAW'
+
+        foreach ($disk in $disks) {
+            $partitions = Get-Partition -DiskNumber $disk.Number
+            foreach ($partition in $partitions) {
+                try {
+                    $size = Get-PartitionSupportedSize -DiskNumber $disk.Number -PartitionNumber $partition.PartitionNumber
+                    if ($partition.Size -lt $size.SizeMax) {
+                        Write-Output "Resizing Disk $($disk.Number) Partition $($partition.PartitionNumber) from $($partition.Size) to $($size.SizeMax)"
+                        Resize-Partition -DiskNumber $disk.Number -PartitionNumber $partition.PartitionNumber -Size $size.SizeMax -Verbose
+                    } else {
+                        Write-Output "Disk $($disk.Number) Partition $($partition.PartitionNumber) already at max size ($($partition.Size))"
+                    }
+                } catch {
+                    Write-Warning "Failed resizing Disk $($disk.Number) Partition $($partition.PartitionNumber): $_"
+                }
+            }
+        }
+        
     - script: |
         call ".scripts\run_win_build.bat"
       displayName: Run Windows build
