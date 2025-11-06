@@ -35,8 +35,6 @@ build:
     - win
     # TODO: CPU-only support still under development
     - match(cuda_compiler_version, "==None")
-    # CUDA 13 bring-up: avoid redoing existing builds
-    - not match(cuda_compiler_version, "==13.0")
 
 requirements:
   build:
