@@ -29,14 +29,14 @@ source:
 build:
   number: ${{ build_number }}
   string: cuda${{ cuda_compiler_version | version_to_buildstring }}py${{ python | version_to_buildstring }}h${{ hash }}_${{ build_number }}
-  # TODO: CPU-only support still under development
-  # No success enabling Windows build as of 3.1.0:
-  # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
   skip:
+    # No success enabling Windows build as of 3.1.0:
+    # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
     - win
+    # TODO: CPU-only support still under development
     - match(cuda_compiler_version, "==None")
-    # debug
-    - not (match(cuda_compiler_version, "==13.0") and match(python, "==3.13"))
+    # CUDA 13 bring-up: avoid redoing existing builds
+    - not match(cuda_compiler_version, "==13.0")
 
 requirements:
   build:
