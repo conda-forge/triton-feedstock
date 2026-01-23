@@ -1,7 +1,7 @@
 context:
-  version: "3.5.1"
+  version: "3.6.0"
   # cmake/llvm-hash.txt
-  llvm_commit: 7d5de3033187c8a3bb4d2e322f5462cdaf49808f
+  llvm_commit: f6ded0be897e2878612dd903f7e8bb85448269e5
   build_number: 0
 
 package:
@@ -10,7 +10,7 @@ package:
 
 source:
   - url: https://github.com/triton-lang/triton/releases/download/v${{ version }}/triton-${{ version }}.tar.gz
-    sha256: 4afb7e2af6ab4585ea923eb5054ea1748989d3a4b5b2e035d239723924c8a7fa
+    sha256: 2251e067e4229e4a379259292e284232369977cb3ba1fb2424457df80115ec0a
     patches:
       - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
       # uncomment if we decide to link dynamically again
@@ -18,12 +18,8 @@ source:
       - patches/0003-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
       # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
-      # backport (relevant parts of) https://github.com/triton-lang/triton/pull/6928
-      - patches/0005-fixes-definition-of-PY_SSIZE_T_CLEAN-macro.patch
-      # backport https://github.com/triton-lang/triton/pull/8237
-      - patches/0006-PROTON-Conditionally-include-Proton-tests-8237.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
-    sha256: 917b162698967d9fb8e3aadec09d362282cf03cc254ce4c167e265437ae1507c
+    sha256: f63c624aa63eda73508b9df2be2a6945ea4fddbee58615fbe1cd747b6884dd5e
     target_directory: llvm-project
 
 build:
