@@ -36,6 +36,8 @@ requirements:
   build:
     - ${{ compiler('cxx') }}
     - ${{ compiler('cuda') }}
+    - if: linux and aarch64 and cuda_compiler_version != "None"
+      then: arm-variant * ${{ arm_variant_type }} 
     - ${{ stdlib('c') }}
     - ninja
     - cmake
