@@ -31,11 +31,15 @@ build:
     - win
     # TODO: CPU-only support still under development
     - match(cuda_compiler_version, "==None")
+    # bring-up: only add build tegra
+    - match(arm_variant_type, "!=tegra")
 
 requirements:
   build:
     - ${{ compiler('cxx') }}
     - ${{ compiler('cuda') }}
+    - if: linux and aarch64 and cuda_compiler_version != "None"
+      then: arm-variant * ${{ arm_variant_type }} 
     - ${{ stdlib('c') }}
     - ninja
     - cmake
