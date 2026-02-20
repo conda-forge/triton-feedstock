@@ -1,7 +1,7 @@
-From faa725cc77ae218d0a724fb030664b8ebc47ecbe Mon Sep 17 00:00:00 2001
+From 3b7a25597f770b8aaedcbc07882f3d4617591822 Mon Sep 17 00:00:00 2001
 From: Mark Harfouche <mark.harfouche@gmail.com>
 Date: Sat, 11 Jan 2025 22:33:48 -0500
-Subject: [PATCH 4/5] Add conda-forge include dirs to list of include dirs
+Subject: [PATCH 4/4] Add conda-forge include dirs to list of include dirs
  during compilation
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 4/5] Add conda-forge include dirs to list of include dirs
  1 file changed, 22 insertions(+)
 
 diff --git a/python/triton/runtime/build.py b/python/triton/runtime/build.py
-index 2d0899603..e89f48877 100644
+index 786f51e54..e79244581 100644
 --- a/python/triton/runtime/build.py
 +++ b/python/triton/runtime/build.py
 @@ -5,8 +5,10 @@ import hashlib
@@ -22,8 +22,8 @@ index 2d0899603..e89f48877 100644
 +import sys
  import sysconfig
  import tempfile
- 
-@@ -43,6 +45,26 @@ def _build(name: str, src: str, srcdir: str, library_dirs: list[str], include_di
+ import re
+@@ -39,6 +41,26 @@ def _build(name: str, src: str, srcdir: str, library_dirs: list[str], include_di
      py_include_dir = sysconfig.get_paths(scheme=scheme)["include"]
      custom_backend_dirs = knobs.build.backend_dirs
      include_dirs = include_dirs + [srcdir, py_include_dir, *custom_backend_dirs]
@@ -49,4 +49,7 @@ index 2d0899603..e89f48877 100644
 +
      # for -Wno-psabi, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111047
      cc_cmd = [cc, src, "-O3", "-shared", "-fPIC", "-Wno-psabi", "-o", so]
-     cc_cmd += [f'-l{lib}' for lib in libraries]
+     cc_cmd += [_library_flag(lib) for lib in libraries]
+-- 
+2.53.0
+
