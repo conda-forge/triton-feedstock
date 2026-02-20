@@ -1,4 +1,4 @@
-From 30c2df0dc9a05ab5a251aeff4a473dffebd55a5f Mon Sep 17 00:00:00 2001
+From 49c0a665329a822217f3788ce52ace0081797fda Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@quansight.com>
 Date: Fri, 1 Aug 2025 13:31:58 +0200
 Subject: [PATCH 3/4] Use system PATH to find tools (in CONDA_PREFIX)
@@ -8,7 +8,7 @@ Subject: [PATCH 3/4] Use system PATH to find tools (in CONDA_PREFIX)
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/python/triton/knobs.py b/python/triton/knobs.py
-index cd61f3972..e51566548 100644
+index b55bd3de3..cb3fca013 100644
 --- a/python/triton/knobs.py
 +++ b/python/triton/knobs.py
 @@ -4,6 +4,7 @@ import functools

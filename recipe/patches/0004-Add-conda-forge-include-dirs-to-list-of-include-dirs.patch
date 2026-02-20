@@ -1,4 +1,4 @@
-From 3b7a25597f770b8aaedcbc07882f3d4617591822 Mon Sep 17 00:00:00 2001
+From 835043cb0eb030c3460f3e89f7d3b82b12204ade Mon Sep 17 00:00:00 2001
 From: Mark Harfouche <mark.harfouche@gmail.com>
 Date: Sat, 11 Jan 2025 22:33:48 -0500
 Subject: [PATCH 4/4] Add conda-forge include dirs to list of include dirs
