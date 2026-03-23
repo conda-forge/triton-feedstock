@@ -18,9 +18,6 @@ source:
       - patches/0003-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
       # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
-  - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
-    sha256: f63c624aa63eda73508b9df2be2a6945ea4fddbee58615fbe1cd747b6884dd5e
-    target_directory: llvm-project
 
 build:
   number: ${{ build_number }}
