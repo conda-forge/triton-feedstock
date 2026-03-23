@@ -31,7 +31,3 @@ zip_keys:
   - c_stdlib_version
   - cuda_compiler_version
   - arm_variant_type
-zlib:
-- '1'
-zstd:
-- '1.5'
