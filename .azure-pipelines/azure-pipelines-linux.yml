@@ -103,7 +103,7 @@ jobs:
         fi
         ./.scripts/create_conda_build_artifacts.sh
     displayName: Prepare conda build artifacts
-    condition: and(succeededOrFailed(), eq(variables.STORE_BUILD_ARTIFACTS, 'True'))
+    condition: and(succeededOrFailed(), variables.STORE_BUILD_ARTIFACTS)
 
   - task: PublishPipelineArtifact@1
     displayName: Store conda build artifacts
