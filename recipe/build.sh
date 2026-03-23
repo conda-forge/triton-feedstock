@@ -2,6 +2,8 @@
 
 set -ex
 
+exit 1
+
 # remove outdated vendored headers
 rm -rf $SRC_DIR/python/triton/third_party
 
