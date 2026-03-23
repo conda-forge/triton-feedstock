@@ -37,32 +37,6 @@ requirements:
     - if: linux and aarch64 and cuda_compiler_version != "None"
       then: arm-variant * ${{ arm_variant_type }} 
     - ${{ stdlib('c') }}
-    - ninja
-    - cmake
-    - if: win
-      then: m2-sed
-      else: sed
-    - if: build_platform != target_platform
-      then:
-        - python
-        - cross-python_${{ target_platform }}
-  host:
-    - python
-    - pybind11
-    - pip
-    - setuptools
-    - zlib
-    - zstd  # for llvm
-    - nlohmann_json
-    - cuda-cupti-dev
-    - cuda-version ${{ cuda_compiler_version }}.*
-  run:
-    - python
-    - setuptools
-    - cuda-nvcc-tools
-    - cuda-cuobjdump
-    - cuda-cudart
-    - cuda-cupti
 
 tests:
   - python:
