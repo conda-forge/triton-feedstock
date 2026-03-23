@@ -14,3 +14,7 @@ github:
 provider:
   linux_64: github_actions
   linux_aarch64: github_actions
+workflow_settings:
+  store_build_artifacts:
+    - platform: linux_64
+      value: true
