@@ -23,21 +23,21 @@ jobs:
       matrix:
         include:
           - CONFIG: linux_64_c_stdlib_version2.17cuda_compiler_version12.9python3.13.____cp313
-            STORE_BUILD_ARTIFACTS: True
+            STORE_BUILD_ARTIFACTS: False
             SHORT_CONFIG: linux_64_c_stdlib_version2.17cuda_compil_h88f978e6
             UPLOAD_PACKAGES: True
             os: ubuntu
             runs_on: ['ubuntu-latest']
             DOCKER_IMAGE: quay.io/condaforge/linux-anvil-x86_64:alma9
           - CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.17cuda_compiler_version12.9python3.13.____cp313
-            STORE_BUILD_ARTIFACTS: True
+            STORE_BUILD_ARTIFACTS: False
             SHORT_CONFIG: linux_aarch64_arm_variant_typesbsac_stdl_h783e5c13
             UPLOAD_PACKAGES: True
             os: ubuntu
             runs_on: ['ubuntu-latest']
             DOCKER_IMAGE: quay.io/condaforge/linux-anvil-x86_64:alma9
           - CONFIG: linux_aarch64_arm_variant_typetegrac_stdlib_version2.34cuda_compiler_version12.9python3.13.____cp313
-            STORE_BUILD_ARTIFACTS: True
+            STORE_BUILD_ARTIFACTS: False
             SHORT_CONFIG: linux_aarch64_arm_variant_typetegrac_std_h2fe05f75
             UPLOAD_PACKAGES: True
             os: ubuntu
