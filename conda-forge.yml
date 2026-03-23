@@ -1,7 +1,3 @@
-azure:
-  free_disk_space: true
-  settings_linux:
-    swapfile_size: 10GiB
 build_platform:
   linux_aarch64: linux_64
 conda_build:
