@@ -16,5 +16,5 @@ provider:
   linux_aarch64: github_actions
 workflow_settings:
   store_build_artifacts:
-    - platform: linux_64
+    - platform: linux-64
       value: true
