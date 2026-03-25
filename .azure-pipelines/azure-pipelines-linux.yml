@@ -12,8 +12,7 @@ jobs:
         CONFIG: linux_64_c_stdlib_version2.17cuda_compiler_version12.9python3.13.____cp313
         UPLOAD_PACKAGES: 'True'
         DOCKER_IMAGE: quay.io/condaforge/linux-anvil-x86_64:alma9
-        store_build_artifacts: true
-        SHORT_CONFIG: linux_64_c_stdlib_version2.17cuda_compil_h88f978e6
+        store_build_artifacts: false
       linux_aarch64_arm_variant_typesbsac_stdlib_version2.17cuda_compiler_version12.9python3.13.____cp313:
         CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.17cuda_compiler_version12.9python3.13.____cp313
         UPLOAD_PACKAGES: 'True'
