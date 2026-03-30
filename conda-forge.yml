@@ -14,3 +14,4 @@ workflow_settings:
   store_build_artifacts:
     - platform: linux-64
       value: true
+matrix: 1
