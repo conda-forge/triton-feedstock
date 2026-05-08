@@ -1,8 +1,8 @@
 context:
-  version: "3.6.0"
+  version: "3.7.0"
   # cmake/llvm-hash.txt
   llvm_commit: f6ded0be897e2878612dd903f7e8bb85448269e5
-  build_number: 2
+  build_number: 0
 
 package:
   name: triton
@@ -10,7 +10,7 @@ package:
 
 source:
   - url: https://github.com/triton-lang/triton/releases/download/v${{ version }}/triton-${{ version }}.tar.gz
-    sha256: 2251e067e4229e4a379259292e284232369977cb3ba1fb2424457df80115ec0a
+    sha256: 101091a0b0a5e7c9b8ad8fec1f3f0274023299a527e3d26d9bd9551a3a82bbb4
     patches:
       - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
       # uncomment if we decide to link dynamically again
@@ -37,7 +37,7 @@ requirements:
     - ${{ compiler('cxx') }}
     - ${{ compiler('cuda') }}
     - if: linux and aarch64 and cuda_compiler_version != "None"
-      then: arm-variant * ${{ arm_variant_type }} 
+      then: arm-variant * ${{ arm_variant_type }}
     - ${{ stdlib('c') }}
     - ninja
     - cmake
