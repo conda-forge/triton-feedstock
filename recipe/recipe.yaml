@@ -1,7 +1,7 @@
 context:
   version: "3.7.0"
   # cmake/llvm-hash.txt
-  llvm_commit: f6ded0be897e2878612dd903f7e8bb85448269e5
+  llvm_commit: ac5dc54d509169d387fcfd495d71853d81c46484
   build_number: 0
 
 package:
