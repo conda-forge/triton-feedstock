@@ -1,5 +1,14 @@
+From 4ee1c4a041c6b956ae56532b85b8405603ba940a Mon Sep 17 00:00:00 2001
+From: Santi Villalba <sdvillal@gmail.com>
+Date: Fri, 15 May 2026 16:13:41 +0200
+Subject: [PATCH] Use system PATH to find tools (in CONDA_PREFIX)
+
+---
+ python/triton/knobs.py | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
+
 diff --git a/python/triton/knobs.py b/python/triton/knobs.py
-index b55bd3de32..677378f9f4 100644
+index b55bd3de32..d49d523e20 100644
 --- a/python/triton/knobs.py
 +++ b/python/triton/knobs.py
 @@ -4,6 +4,7 @@
