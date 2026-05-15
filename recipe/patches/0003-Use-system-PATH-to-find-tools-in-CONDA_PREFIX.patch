@@ -24,7 +24,7 @@ index b55bd3de32..677378f9f4 100644
 +        # - depends on recent enough cuda-nvcc-tools, providing suitable ptxas for blackwell.
 +        # - does not ship triton's custom ptxas-blackwell.
 +        # This heuristic allows conda-forge's triton to work out-of-the-box in blackwell systems.
-+        # Lowest priority means no behavior change in other circunstances.
++        # Lowest priority means no behavior change in other circumstances.
 +        # Fixes https://github.com/conda-forge/triton-feedstock/issues/67
 +        if str(self.binary).endswith('ptxas-blackwell'):
 +            if os.environ.get("CONDA_PREFIX") is not None:
