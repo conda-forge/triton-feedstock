@@ -1,17 +1,8 @@
-From 49c0a665329a822217f3788ce52ace0081797fda Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@quansight.com>
-Date: Fri, 1 Aug 2025 13:31:58 +0200
-Subject: [PATCH 3/4] Use system PATH to find tools (in CONDA_PREFIX)
-
----
- python/triton/knobs.py | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
 diff --git a/python/triton/knobs.py b/python/triton/knobs.py
-index b55bd3de3..cb3fca013 100644
+index b55bd3de32..677378f9f4 100644
 --- a/python/triton/knobs.py
 +++ b/python/triton/knobs.py
-@@ -4,6 +4,7 @@ import functools
+@@ -4,6 +4,7 @@
  import importlib
  import os
  import re
@@ -19,7 +10,7 @@ index b55bd3de3..cb3fca013 100644
  import subprocess
  import sysconfig
  import pathlib
-@@ -205,12 +206,11 @@ class env_nvidia_tool(env_base[str, NvidiaTool]):
+@@ -205,12 +206,22 @@ def get(self) -> NvidiaTool:
      def transform(self, path: str) -> NvidiaTool:
          # We still add default as fallback in case the pointed binary isn't
          # accessible.
@@ -28,6 +19,17 @@ index b55bd3de3..cb3fca013 100644
 -        else:
 -            paths = [self.default_path]
 +        paths = [path, self.default_path, shutil.which(self.binary)]
++
++        # Conda-forge triton's package:
++        # - depends on recent enough cuda-nvcc-tools, providing suitable ptxas for blackwell.
++        # - does not ship triton's custom ptxas-blackwell.
++        # This heuristic allows conda-forge's triton to work out-of-the-box in blackwell systems.
++        # Lowest priority means no behavior change in other circunstances.
++        # Fixes https://github.com/conda-forge/triton-feedstock/issues/67
++        if str(self.binary).endswith('ptxas-blackwell'):
++            if os.environ.get("CONDA_PREFIX") is not None:
++                conda_path = os.path.join(os.environ["CONDA_PREFIX"], "bin", "ptxas")
++                paths.append(conda_path)
  
          for path in paths:
 +            if path is None:
@@ -35,6 +37,3 @@ index b55bd3de3..cb3fca013 100644
              if tool := NvidiaTool.from_path(path):
                  return tool
  
--- 
-2.53.0
-
