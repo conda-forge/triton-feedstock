@@ -1,8 +1,8 @@
 context:
-  version: "3.6.0"
+  version: "3.7.0"
   # cmake/llvm-hash.txt
-  llvm_commit: f6ded0be897e2878612dd903f7e8bb85448269e5
-  build_number: 1
+  llvm_commit: ac5dc54d509169d387fcfd495d71853d81c46484
+  build_number: 0
 
 package:
   name: triton
@@ -10,7 +10,7 @@ package:
 
 source:
   - url: https://github.com/triton-lang/triton/releases/download/v${{ version }}/triton-${{ version }}.tar.gz
-    sha256: 2251e067e4229e4a379259292e284232369977cb3ba1fb2424457df80115ec0a
+    sha256: 980397efada8ed2de303a95ad918e7454df13d7df5941840646e8004d4bd0462
     patches:
       - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
       # uncomment if we decide to link dynamically again
@@ -19,7 +19,7 @@ source:
       # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
-    sha256: f63c624aa63eda73508b9df2be2a6945ea4fddbee58615fbe1cd747b6884dd5e
+    sha256: 76fbbc3c1193db34ff975472c9cfcaee2264e0c6081b71729e229cd8572ab5b8
     target_directory: llvm-project
 
 build:
@@ -37,7 +37,7 @@ requirements:
     - ${{ compiler('cxx') }}
     - ${{ compiler('cuda') }}
     - if: linux and aarch64 and cuda_compiler_version != "None"
-      then: arm-variant * ${{ arm_variant_type }} 
+      then: arm-variant * ${{ arm_variant_type }}
     - ${{ stdlib('c') }}
     - ninja
     - cmake
