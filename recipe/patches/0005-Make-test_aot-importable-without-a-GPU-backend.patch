@@ -1,0 +1,48 @@
+From 21583528d84ceab1e94491af7b825f6be0011c17 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@quansight.com>
+Date: Fri, 22 May 2026 14:24:18 +0200
+Subject: [PATCH 5/5] Make `test_aot` importable without a GPU backend
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fix a `NameError` when the test file is being imported without GPU
+available:
+
+```
+_____________ ERROR collecting python/test/unit/tools/test_aot.py ______________
+python/test/unit/tools/test_aot.py:118: in <module>
+    test_utils_src += """
+E   NameError: name 'test_utils_src' is not defined
+```
+
+This happens because a0e769fc26e4adefca6522598ab3969b089be45c introduced
+logic that defines different initial values for global-scope
+`test_utils_src` variable depending on whether CUDA or HIP is available.
+However, when neither of these are available, the variable is not
+declared at all and the code trying to append to it subsequently fails.
+
+Instead, fill the value with a plain `#error` if no backend is found.
+The relevant tests will still fail but the file will be importable
+again, which we need for minimal conda-forge testing.
+
+Signed-off-by: Michał Górny <mgorny@quansight.com>
+---
+ python/test/unit/tools/test_aot.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/python/test/unit/tools/test_aot.py b/python/test/unit/tools/test_aot.py
+index 5cc38b16ae..05889f834f 100644
+--- a/python/test/unit/tools/test_aot.py
++++ b/python/test/unit/tools/test_aot.py
+@@ -114,6 +114,10 @@ elif is_hip():
+ #define __HIP_PLATFORM_AMD__
+ #include <hip/hip_runtime.h>
+ """
++else:
++    test_utils_src = """
++#error "No GPU backend available"
++"""
+ 
+ test_utils_src += """
+ #include <stdio.h>
