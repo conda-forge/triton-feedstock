@@ -18,6 +18,7 @@ source:
       - patches/0003-Use-system-PATH-to-find-tools-in-CONDA_PREFIX.patch
       # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
+      - patches/0005-Make-test_aot-importable-without-a-GPU-backend.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
     sha256: 76fbbc3c1193db34ff975472c9cfcaee2264e0c6081b71729e229cd8572ab5b8
     target_directory: llvm-project
