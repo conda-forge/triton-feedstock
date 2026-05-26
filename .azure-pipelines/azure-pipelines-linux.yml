@@ -14,7 +14,7 @@ jobs:
         DOCKER_IMAGE: quay.io/condaforge/linux-anvil-x86_64:alma9
         docker_run_args: ''
         build_workspace_dir: build_artifacts
-        pagefile_size: 10GiB
+        pagefile_size: '0'
         store_build_artifacts: false
         tools_install_dir: ~/miniforge3
   timeoutInMinutes: 360
@@ -42,21 +42,6 @@ jobs:
          sudo apt-get autoclean -y >& /dev/null
          df -h
     displayName: Manage disk space
-  - script: |
-        PAGEFILE_SIZE=$(pagefile_size)
-        [[ ${PAGEFILE_SIZE} == 0* ]] && exit
-        SWAPFILE=/swapfile
-        # If there is already a swapfile, disable it and remove it
-        if swapon --show | grep -q $SWAPFILE; then
-            echo "Disabling existing swapfile..."
-            sudo swapoff $SWAPFILE || true
-        fi
-        [ -f "$SWAPFILE" ] && sudo rm -f $SWAPFILE
-        sudo fallocate -l "${PAGEFILE_SIZE}" $SWAPFILE
-        sudo chmod 600 $SWAPFILE
-        sudo mkswap $SWAPFILE
-        sudo swapon $SWAPFILE
-    displayName: Create swap file
   # configure qemu binfmt-misc running.  This allows us to run docker containers
   # embedded qemu-static
   - script: |
