@@ -71,6 +71,21 @@ jobs:
         export MINIFORGE_HOME="${MINIFORGE_HOME/#~/${HOME}}"
         export CONDA_BLD_PATH="${CONDA_BLD_PATH/#~/${HOME}}"
         echo "::endgroup::"
+        if [[ ${PAGEFILE_SIZE} != 0* ]]; then
+            echo "::group::Setting up swap file"
+            SWAPFILE=/swapfile
+            # If there is already a swapfile, disable it and remove it
+            if swapon --show | grep -q $SWAPFILE; then
+                echo "Disabling existing swapfile..."
+                sudo swapoff $SWAPFILE
+            fi
+            [ -f "$SWAPFILE" ] && sudo rm -f $SWAPFILE
+            sudo fallocate -l "${PAGEFILE_SIZE}" $SWAPFILE
+            sudo chmod 600 $SWAPFILE
+            sudo mkswap $SWAPFILE
+            sudo swapon $SWAPFILE
+            echo "::endgroup::"
+        fi
         ./.scripts/run_docker_build.sh
 
     - name: Build on macOS
