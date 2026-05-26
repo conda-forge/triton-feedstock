@@ -31,6 +31,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.17cuda_compiler_version12.9python3.11.____cpython
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -40,6 +41,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.17cuda_compiler_version12.9python3.12.____cpython
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -49,6 +51,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.17cuda_compiler_version12.9python3.13.____cp313
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -58,6 +61,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.17cuda_compiler_version12.9python3.14.____cp314
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -67,6 +71,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.28cuda_compiler_version13.0python3.10.____cpython
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -76,6 +81,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.28cuda_compiler_version13.0python3.11.____cpython
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -85,6 +91,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.28cuda_compiler_version13.0python3.12.____cpython
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -94,6 +101,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.28cuda_compiler_version13.0python3.13.____cp313
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -103,6 +111,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typesbsac_stdlib_version2.28cuda_compiler_version13.0python3.14.____cp314
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -112,6 +121,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typetegrac_stdlib_version2.34cuda_compiler_version12.9python3.10.____cpython
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -121,6 +131,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typetegrac_stdlib_version2.34cuda_compiler_version12.9python3.11.____cpython
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -130,6 +141,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typetegrac_stdlib_version2.34cuda_compiler_version12.9python3.12.____cpython
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -139,6 +151,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typetegrac_stdlib_version2.34cuda_compiler_version12.9python3.13.____cp313
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -148,6 +161,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
           - CONFIG: linux_aarch64_arm_variant_typetegrac_stdlib_version2.34cuda_compiler_version12.9python3.14.____cp314
             STORE_BUILD_ARTIFACTS: False
             UPLOAD_PACKAGES: True
@@ -157,6 +171,7 @@ jobs:
             tools_install_dir: ~/miniforge3
             build_workspace_dir: build_artifacts
             docker_run_args: 
+            pagefile_size: 0
     steps:
 
     - name: Checkout code
@@ -173,6 +188,7 @@ jobs:
         DOCKER_IMAGE: ${{ matrix.DOCKER_IMAGE }}
         CI: github_actions
         CONDA_FORGE_DOCKER_RUN_ARGS: "${{ matrix.docker_run_args }}"
+        PAGEFILE_SIZE: "${{ matrix.pagefile_size }}"
         BINSTAR_TOKEN: ${{ secrets.BINSTAR_TOKEN }}
         FEEDSTOCK_TOKEN: ${{ secrets.FEEDSTOCK_TOKEN }}
         STAGING_BINSTAR_TOKEN: ${{ secrets.STAGING_BINSTAR_TOKEN }}
