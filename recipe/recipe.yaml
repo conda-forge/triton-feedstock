@@ -31,7 +31,9 @@ build:
     # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
     - win
     # TODO: CPU-only support still under development
-    - match(cuda_compiler_version, "==None")
+    - match(cuda_compiler_version, "!=12.9")
+    - not linux64
+    - not match(python, ">=3.14")
 
 requirements:
   build:
