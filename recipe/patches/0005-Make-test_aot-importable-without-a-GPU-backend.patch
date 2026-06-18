@@ -1,4 +1,4 @@
-From 21583528d84ceab1e94491af7b825f6be0011c17 Mon Sep 17 00:00:00 2001
+From 32bf78bf84a2b090c96590f6f149d03c356f3703 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@quansight.com>
 Date: Fri, 22 May 2026 14:24:18 +0200
 Subject: [PATCH 5/5] Make `test_aot` importable without a GPU backend
