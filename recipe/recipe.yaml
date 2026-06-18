@@ -1,7 +1,7 @@
 context:
-  version: "3.7.0"
+  version: "3.7.1"
   # cmake/llvm-hash.txt
-  llvm_commit: ac5dc54d509169d387fcfd495d71853d81c46484
+  llvm_commit: 1f126a6dea50d185c0781743a667390037ae88bd
   build_number: 0
 
 package:
@@ -9,8 +9,9 @@ package:
   version: ${{ version }}
 
 source:
-  - url: https://github.com/triton-lang/triton/releases/download/v${{ version }}/triton-${{ version }}.tar.gz
-    sha256: 980397efada8ed2de303a95ad918e7454df13d7df5941840646e8004d4bd0462
+  # - url: https://github.com/triton-lang/triton/releases/download/v${{ version }}/triton-${{ version }}.tar.gz
+  - url: https://github.com/triton-lang/triton/archive/f797708c0626e5f9840ca5b0a98790e2c7cb09ad.tar.gz
+    sha256: 35acf558b194204a8a0d7104f989b37879627ea7a0017f1df36d309a39a17e4f
     patches:
       - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
       # uncomment if we decide to link dynamically again
@@ -20,7 +21,7 @@ source:
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
       - patches/0005-Make-test_aot-importable-without-a-GPU-backend.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
-    sha256: 76fbbc3c1193db34ff975472c9cfcaee2264e0c6081b71729e229cd8572ab5b8
+    sha256: b6aa9fbc954895bbd69374529593bbcdc4342b0812d8884698bbfd3d92d3426d
     target_directory: llvm-project
 
 build:

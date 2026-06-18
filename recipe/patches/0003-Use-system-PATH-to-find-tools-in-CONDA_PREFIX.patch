@@ -1,17 +1,17 @@
-From 4ee1c4a041c6b956ae56532b85b8405603ba940a Mon Sep 17 00:00:00 2001
+From 81dd85c98215adcf50150371a1a9b2d08bda9aa4 Mon Sep 17 00:00:00 2001
 From: Santi Villalba <sdvillal@gmail.com>
 Date: Fri, 15 May 2026 16:13:41 +0200
-Subject: [PATCH] Use system PATH to find tools (in CONDA_PREFIX)
+Subject: [PATCH 3/5] Use system PATH to find tools (in CONDA_PREFIX)
 
 ---
  python/triton/knobs.py | 19 +++++++++++++++----
  1 file changed, 15 insertions(+), 4 deletions(-)
 
 diff --git a/python/triton/knobs.py b/python/triton/knobs.py
-index b55bd3de32..d49d523e20 100644
+index c8bf2d421a..aedaf9597b 100644
 --- a/python/triton/knobs.py
 +++ b/python/triton/knobs.py
-@@ -4,6 +4,7 @@
+@@ -4,6 +4,7 @@ import functools
  import importlib
  import os
  import re
@@ -19,7 +19,7 @@ index b55bd3de32..d49d523e20 100644
  import subprocess
  import sysconfig
  import pathlib
-@@ -205,12 +206,22 @@ def get(self) -> NvidiaTool:
+@@ -205,12 +206,22 @@ class env_nvidia_tool(env_base[str, NvidiaTool]):
      def transform(self, path: str) -> NvidiaTool:
          # We still add default as fallback in case the pointed binary isn't
          # accessible.
