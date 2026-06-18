@@ -83,4 +83,9 @@ export LLVM_SYSPATH=$PWD/llvm-project/build
 export LLVM_INCLUDE_DIRS=$LLVM_SYSPATH/include
 export LLVM_LIBRARY_DIR=$LLVM_SYSPATH/lib
 
+# Strip symbols at link time to shrink the package: the default build type
+# is TritonRelBuildWithAsserts (-O2 -g) and rattler-build does not strip in
+# post-processing. Append to LDFLAGS to keep conda's linker flags intact.
+export LDFLAGS="${LDFLAGS} -Wl,-s"
+
 $PYTHON -m pip install . -vv
