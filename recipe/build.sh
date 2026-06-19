@@ -26,6 +26,11 @@ export MAX_JOBS=$CPU_COUNT
 # no easy way of passing this, not really worth a whole patch
 sed -i -e '/TRITON_BUILD_UT/s:\bON:OFF:' CMakeLists.txt
 
+# don't emit debug info for triton's own objects: it's stripped from the
+# final library anyway (-Wl,-s below), so generating it just wastes build
+# disk and link memory. LLVM is already built without -g (Release).
+sed -i -e '/FLAGS_TRITONRELBUILDWITHASSERTS/s: -g::' CMakeLists.txt
+
 CMAKE_HOST_ARGS=(
     -DCMAKE_BUILD_TYPE=Release
     -DLLVM_BUILD_UTILS=ON
@@ -83,9 +88,9 @@ export LLVM_SYSPATH=$PWD/llvm-project/build
 export LLVM_INCLUDE_DIRS=$LLVM_SYSPATH/include
 export LLVM_LIBRARY_DIR=$LLVM_SYSPATH/lib
 
-# Strip symbols at link time to shrink the package: the default build type
-# is TritonRelBuildWithAsserts (-O2 -g) and rattler-build does not strip in
-# post-processing. Append to LDFLAGS to keep conda's linker flags intact.
+# Strip symbols at link time to shrink the package: statically-linked LLVM
+# adds a large symbol table to libtriton.so, and rattler-build does not
+# strip in post-processing. Append to LDFLAGS to keep conda's flags intact.
 export LDFLAGS="${LDFLAGS} -Wl,-s"
 
 $PYTHON -m pip install . -vv
