@@ -1,4 +1,4 @@
-From ebf7330c3bed27a50e1c18e23fb2d46dc384a79c Mon Sep 17 00:00:00 2001
+From 7c105765bae0d7d68206fe858cbcf0b32cd9c50b Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Micha=C5=82=20G=C3=B3rny?= <mgorny@gentoo.org>
 Date: Wed, 20 Nov 2024 17:17:18 +0100
 Subject: [PATCH 1/5] Remove -Werror that cause false-positive build failures
@@ -8,15 +8,15 @@ Subject: [PATCH 1/5] Remove -Werror that cause false-positive build failures
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c47bb0126c..9206d23e1d 100644
+index 3f066ea916..2c59ce2b1a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -159,7 +159,7 @@ if(NOT MSVC)
+@@ -282,7 +282,7 @@ if(NOT MSVC)
      # crash a Triton not compiled with visibility due to missing symbols.
      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRITON_EXT_ENABLED=1")
    endif()
 -  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-covered-switch-default ")
 +  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-covered-switch-default ")
- 
  else()
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4244 /wd4624 /wd4715 /wd4530")
+ endif()

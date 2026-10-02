@@ -1,17 +1,16 @@
 context:
-  version: "3.7.1"
-  # cmake/llvm-hash.txt
-  llvm_commit: 1f126a6dea50d185c0781743a667390037ae88bd
-  build_number: 1
+  version: "3.8.0"
+  # cmake/llvm-info.json
+  llvm_commit: 5f07f818b51b786b0a87b4e514882600ecba112f
+  build_number: 0
 
-package:
+recipe:
   name: triton
   version: ${{ version }}
 
 source:
-  # - url: https://github.com/triton-lang/triton/releases/download/v${{ version }}/triton-${{ version }}.tar.gz
-  - url: https://github.com/triton-lang/triton/archive/f797708c0626e5f9840ca5b0a98790e2c7cb09ad.tar.gz
-    sha256: 35acf558b194204a8a0d7104f989b37879627ea7a0017f1df36d309a39a17e4f
+  - url: https://github.com/triton-lang/triton/releases/download/v${{ version }}/triton-${{ version }}.tar.gz
+    sha256: 451b07863426eb7804fc8fc59ca046a3e2e7312ded97124686a5a1d15fe9521f
     patches:
       - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
       # uncomment if we decide to link dynamically again
@@ -21,12 +20,11 @@ source:
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
       - patches/0005-Make-test_aot-importable-without-a-GPU-backend.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
-    sha256: b6aa9fbc954895bbd69374529593bbcdc4342b0812d8884698bbfd3d92d3426d
+    sha256: c165c01a3e6c0e12f0794d387f2f3b0740e2b30ceeee10cc4d6e0adba5044ff3
     target_directory: llvm-project
 
 build:
   number: ${{ build_number }}
-  string: cuda${{ cuda_compiler_version | version_to_buildstring }}py${{ python | version_to_buildstring }}h${{ hash }}_${{ build_number }}
   skip:
     # No success enabling Windows build as of 3.1.0:
     # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
@@ -34,63 +32,117 @@ build:
     # TODO: CPU-only support still under development
     - match(cuda_compiler_version, "==None")
 
-requirements:
-  build:
-    - ${{ compiler('cxx') }}
-    - ${{ compiler('cuda') }}
-    - if: linux and aarch64 and cuda_compiler_version != "None"
-      then: arm-variant * ${{ arm_variant_type }}
-    - ${{ stdlib('c') }}
-    - ninja
-    - cmake
-    - if: win
-      then: m2-sed
-      else: sed
-    - if: build_platform != target_platform
-      then:
-        - python
-        - cross-python_${{ target_platform }}
-  host:
-    - python
-    - pybind11
-    - pip
-    - setuptools
-    - zlib
-    - zstd  # for llvm
-    - nlohmann_json
-    - cuda-cupti-dev
-    - cuda-version ${{ cuda_compiler_version }}.*
-  run:
-    - python
-    - setuptools
-    - cuda-nvcc-tools
-    - cuda-cuobjdump
-    - cuda-cudart
-    - cuda-cupti
+outputs:
+  - staging:
+      name: llvm-build
 
-tests:
-  - python:
-      imports:
-        - triton
-        - triton._C.libtriton
-      pip_check: true
-  - files:
-      source:
-        - python/test/
+    build:
+      script: build_llvm
+
     requirements:
-      run:
+      build:
+        - ${{ compiler('cxx') }}
+        - ${{ stdlib('c') }}
+        - ninja
+        - cmake
+      host:
+        - zlib
+        - zstd
+
+  # workaround for https://github.com/conda-forge/conda-smithy/issues/2673
+  - package:
+      name: triton-dummy
+
+    build:
+      # a hack to make sure this is only present while rerendering
+      skip: env.get("CONDA_BLD_PATH") != ""
+
+    inherit: llvm-build
+
+  - package:
+      name: triton
+
+    inherit: llvm-build
+
+    build:
+      script: build
+      string: cuda${{ cuda_compiler_version | version_to_buildstring }}py${{ python | version_to_buildstring }}h${{ hash }}_${{ build_number }}
+
+    requirements:
+      build:
+        - ${{ compiler('cxx') }}
+        - ${{ compiler('cuda') }}
+        - if: linux and aarch64 and cuda_compiler_version != "None"
+          then: arm-variant * ${{ arm_variant_type }}
+        - ${{ stdlib('c') }}
+        - ninja
+        - cmake
+        - if: win
+          then: m2-sed
+          else: sed
+        - if: build_platform != target_platform
+          then:
+            - python
+            - cross-python_${{ target_platform }}
+      host:
+        - python
+        - pybind11
         - pip
-        - pytest
-        - scipy
-        # use cpu* variant to avoid the pin on specific triton version
-        # (also we're doing non-GPU testing)
-        - pytorch * cpu*
-    script:
-      # test suite essentially depends on availability of a physical GPU,
-      # see https://github.com/triton-lang/triton/issues/466;
-      # run a test that does not require a GPU but checks
-      # if triton.compile() works
-      - TRITON_INTERPRET=1 pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
+        - setuptools
+        - zlib
+        - zstd  # for llvm
+        - nlohmann_json
+        - cuda-cupti-dev
+        - cuda-version ${{ cuda_compiler_version }}.*
+      run:
+        - python
+        - setuptools
+        - cuda-nvcc-tools
+        - cuda-cuobjdump
+        - cuda-cudart
+        - cuda-cupti
+
+    tests:
+      - package_contents:
+          bin:
+            exists:
+              - proton
+              - proton-viewer
+            not_exists:
+              # make sure we don't accidentally install any LLVM files
+              - clang
+              - lld
+              - llvm-as
+              - mlir-opt
+          files:
+            not_exists:
+              - include/**
+              - lib/lib*
+      - python:
+          imports:
+            - triton
+            - triton._C.libtriton
+          pip_check: true
+      - files:
+          source:
+            - python/test/
+        requirements:
+          run:
+            - pip
+            - pytest
+            - scipy
+            # use cpu* variant to avoid the pin on specific triton version
+            # (also we're doing non-GPU testing)
+            - pytorch * cpu*
+        script:
+          - proton --help
+          # requires unpackaged 'llnl-hatchet' (also pandas)
+          # - proton-viewer
+          # test suite essentially depends on availability of a physical GPU,
+          # see https://github.com/triton-lang/triton/issues/466;
+          # run a test that does not require a GPU but checks
+          # if triton.compile() works
+          - TRITON_INTERPRET=1 pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
 
 about:
   license: MIT
