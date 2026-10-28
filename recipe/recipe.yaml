@@ -1,7 +1,7 @@
 context:
   version: "3.9.0"
   # cmake/llvm-info.json
-  llvm_commit: 5f07f818b51b786b0a87b4e514882600ecba112f
+  llvm_commit: b010a18d2b648cab83c83967ff26b8fde11acdc6
   build_number: 0
 
 recipe:
@@ -20,7 +20,7 @@ source:
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
       - patches/0005-Make-test_aot-importable-without-a-GPU-backend.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
-    sha256: c165c01a3e6c0e12f0794d387f2f3b0740e2b30ceeee10cc4d6e0adba5044ff3
+    sha256: 975ad64f584955a714bddd1a3413db14ba3c8cca8292dc020ab58ac4c09decad
     target_directory: llvm-project
 
 build:
