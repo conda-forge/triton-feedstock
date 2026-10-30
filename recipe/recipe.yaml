@@ -2,6 +2,8 @@ context:
   version: "3.9.0"
   # cmake/llvm-info.json
   llvm_commit: b010a18d2b648cab83c83967ff26b8fde11acdc6
+  # cmake/amd-llvm-info.json
+  amd_llvm_commit: 6bc4aaf6641c56ee104f6200c96a6a571bc77052
   build_number: 0
 
 recipe:
@@ -22,6 +24,9 @@ source:
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
     sha256: 975ad64f584955a714bddd1a3413db14ba3c8cca8292dc020ab58ac4c09decad
     target_directory: llvm-project
+  - url: https://github.com/llvm/llvm-project/archive/${{ amd_llvm_commit }}.tar.gz
+    sha256: d3b733961dc1b4de40bfd3bed5fd10e417336f54da20d586f5b3b5ff7aca72bf
+    target_directory: llvm-project-amd
 
 build:
   number: ${{ build_number }}
@@ -37,7 +42,10 @@ outputs:
       name: llvm-build
 
     build:
-      script: build_llvm
+      script:
+        file: build_llvm
+        env:
+          AMD_LLVM_COMMIT: ${{ amd_llvm_commit }}
 
     requirements:
       build:

@@ -34,6 +34,8 @@ sed -i -e '/FLAGS_TRITONRELBUILDWITHASSERTS/s: -g::' CMakeLists.txt
 export LLVM_SYSPATH=$PWD/llvm-project/build
 export LLVM_INCLUDE_DIRS=$LLVM_SYSPATH/include
 export LLVM_LIBRARY_DIR=$LLVM_SYSPATH/lib
+# this is also used only as a boolean and does not do anything
+export TRITON_AMD_CODEGEN_PATH=${PWD}/third-party/amd/backend
 
 # Strip symbols at link time to shrink the package: statically-linked LLVM
 # adds a large symbol table to libtriton.so, and rattler-build does not
