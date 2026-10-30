@@ -86,7 +86,7 @@ outputs:
             - cross-python_${{ target_platform }}
       host:
         - python
-        - pybind11
+        - nanobind
         - pip
         - setuptools
         - zlib
