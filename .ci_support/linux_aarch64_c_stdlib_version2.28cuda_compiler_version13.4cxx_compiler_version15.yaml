@@ -1,3 +1,5 @@
+DOCKER_PLATFORM:
+- linux/aarch64
 arm_variant_type:
 - sbsa
 c_stdlib:
@@ -18,6 +20,8 @@ cxx_compiler_version:
 - '15'
 docker_image:
 - quay.io/condaforge/linux-anvil-aarch64:alma10
+github_actions_labels:
+- blacksmith-16vcpu-ubuntu-2404-arm
 pin_run_as_build:
   python:
     min_pin: x.x

@@ -1,7 +1,9 @@
 context:
-  version: "3.8.0"
+  version: "3.9.0"
   # cmake/llvm-info.json
-  llvm_commit: 5f07f818b51b786b0a87b4e514882600ecba112f
+  llvm_commit: b010a18d2b648cab83c83967ff26b8fde11acdc6
+  # cmake/amd-llvm-info.json
+  amd_llvm_commit: 6bc4aaf6641c56ee104f6200c96a6a571bc77052
   build_number: 0
 
 recipe:
@@ -10,7 +12,7 @@ recipe:
 
 source:
   - url: https://github.com/triton-lang/triton/releases/download/v${{ version }}/triton-${{ version }}.tar.gz
-    sha256: 451b07863426eb7804fc8fc59ca046a3e2e7312ded97124686a5a1d15fe9521f
+    sha256: 264f9a476ff0ca6616de06f0580dbb51e6e35709b9fc209ef8ed6fa689dd8d8d
     patches:
       - patches/0001-Remove-Werror-that-cause-false-positive-build-failur.patch
       # uncomment if we decide to link dynamically again
@@ -20,8 +22,11 @@ source:
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
       - patches/0005-Make-test_aot-importable-without-a-GPU-backend.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
-    sha256: c165c01a3e6c0e12f0794d387f2f3b0740e2b30ceeee10cc4d6e0adba5044ff3
+    sha256: 975ad64f584955a714bddd1a3413db14ba3c8cca8292dc020ab58ac4c09decad
     target_directory: llvm-project
+  - url: https://github.com/llvm/llvm-project/archive/${{ amd_llvm_commit }}.tar.gz
+    sha256: d3b733961dc1b4de40bfd3bed5fd10e417336f54da20d586f5b3b5ff7aca72bf
+    target_directory: llvm-project-amd
 
 build:
   number: ${{ build_number }}
@@ -37,7 +42,10 @@ outputs:
       name: llvm-build
 
     build:
-      script: build_llvm
+      script:
+        file: build_llvm
+        env:
+          AMD_LLVM_COMMIT: ${{ amd_llvm_commit }}
 
     requirements:
       build:
@@ -86,7 +94,7 @@ outputs:
             - cross-python_${{ target_platform }}
       host:
         - python
-        - pybind11
+        - nanobind
         - pip
         - setuptools
         - zlib
