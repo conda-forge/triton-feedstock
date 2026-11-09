@@ -4,7 +4,7 @@ context:
   llvm_commit: b010a18d2b648cab83c83967ff26b8fde11acdc6
   # cmake/amd-llvm-info.json
   amd_llvm_commit: 6bc4aaf6641c56ee104f6200c96a6a571bc77052
-  build_number: 0
+  build_number: 1
 
 recipe:
   name: triton
@@ -131,26 +131,31 @@ outputs:
             - triton
             - triton._C.libtriton
           pip_check: true
-      - files:
-          source:
-            - python/test/
-        requirements:
-          run:
-            - pip
-            - pytest
-            - scipy
-            # use cpu* variant to avoid the pin on specific triton version
-            # (also we're doing non-GPU testing)
-            - pytorch * cpu*
-        script:
-          - proton --help
-          # requires unpackaged 'llnl-hatchet' (also pandas)
-          # - proton-viewer
-          # test suite essentially depends on availability of a physical GPU,
-          # see https://github.com/triton-lang/triton/issues/466;
-          # run a test that does not require a GPU but checks
-          # if triton.compile() works
-          - TRITON_INTERPRET=1 pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
+      # TODO: drop this condition once `pytorch * cpu*` is published for python 3.15;
+      # until then this test environment cannot be solved, and pytorch's CUDA builds
+      # in turn need triton for python 3.15, so this breaks the cycle
+      - if: match(python, "<3.15")
+        then:
+          - files:
+              source:
+                - python/test/
+            requirements:
+              run:
+                - pip
+                - pytest
+                - scipy
+                # use cpu* variant to avoid the pin on specific triton version
+                # (also we're doing non-GPU testing)
+                - pytorch * cpu*
+            script:
+              - proton --help
+              # requires unpackaged 'llnl-hatchet' (also pandas)
+              # - proton-viewer
+              # test suite essentially depends on availability of a physical GPU,
+              # see https://github.com/triton-lang/triton/issues/466;
+              # run a test that does not require a GPU but checks
+              # if triton.compile() works
+              - TRITON_INTERPRET=1 pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
 
 about:
   license: MIT
