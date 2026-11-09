@@ -4,7 +4,7 @@ context:
   llvm_commit: b010a18d2b648cab83c83967ff26b8fde11acdc6
   # cmake/amd-llvm-info.json
   amd_llvm_commit: 6bc4aaf6641c56ee104f6200c96a6a571bc77052
-  build_number: 0
+  build_number: 1
 
 recipe:
   name: triton
