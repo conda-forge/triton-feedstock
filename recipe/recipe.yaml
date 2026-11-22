@@ -21,6 +21,7 @@ source:
       # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
       - patches/0005-Make-test_aot-importable-without-a-GPU-backend.patch
+      - patches/0006-Fix-building-on-Windows-with-MSVC.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
     sha256: 975ad64f584955a714bddd1a3413db14ba3c8cca8292dc020ab58ac4c09decad
     target_directory: llvm-project
@@ -31,9 +32,6 @@ source:
 build:
   number: ${{ build_number }}
   skip:
-    # No success enabling Windows build as of 3.1.0:
-    # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
-    - win
     # TODO: CPU-only support still under development
     - match(cuda_compiler_version, "==None")
 
@@ -100,6 +98,8 @@ outputs:
         - zlib
         - zstd  # for llvm
         - nlohmann_json
+        - if: win
+          then: dlfcn-win32
         - cuda-cupti-dev
         - cuda-version ${{ cuda_compiler_version }}.*
       run:
@@ -111,21 +111,23 @@ outputs:
         - cuda-cupti
 
     tests:
-      - package_contents:
-          bin:
-            exists:
-              - proton
-              - proton-viewer
-            not_exists:
-              # make sure we don't accidentally install any LLVM files
-              - clang
-              - lld
-              - llvm-as
-              - mlir-opt
-          files:
-            not_exists:
-              - include/**
-              - lib/lib*
+      - if: unix
+        then:
+          package_contents:
+            bin:
+              exists:
+                - proton
+                - proton-viewer
+              not_exists:
+                # make sure we don't accidentally install any LLVM files
+                - clang
+                - lld
+                - llvm-as
+                - mlir-opt
+            files:
+              not_exists:
+                - include/**
+                - lib/lib*
       - python:
           imports:
             - triton
@@ -148,14 +150,19 @@ outputs:
                 # (also we're doing non-GPU testing)
                 - pytorch * cpu*
             script:
-              - proton --help
+              - if: unix
+                then: proton --help
               # requires unpackaged 'llnl-hatchet' (also pandas)
               # - proton-viewer
               # test suite essentially depends on availability of a physical GPU,
               # see https://github.com/triton-lang/triton/issues/466;
               # run a test that does not require a GPU but checks
               # if triton.compile() works
-              - TRITON_INTERPRET=1 pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
+              - if: unix
+                then: TRITON_INTERPRET=1 pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
+                else:
+                  - set TRITON_INTERPRET=1
+                  - pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
 
 about:
   license: MIT

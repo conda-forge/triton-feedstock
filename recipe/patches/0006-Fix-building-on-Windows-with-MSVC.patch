@@ -1,0 +1,102 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Sun, 22 Nov 2026 16:59:08 -0500
+Subject: [PATCH] Fix building on Windows with MSVC and conda-forge dlfcn-win32
+
+---
+ CMakeLists.txt                               | 11 ++++++++---
+ setup.py                                     |  5 ++++-
+ third_party/nvidia/include/cublas_instance.h | 13 +++++++++++++
+ 3 files changed, 25 insertions(+), 4 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1713a47..a886454 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -300,6 +300,11 @@ else()
+ endif()
+ 
+ include_directories(".")
++if(WIN32)
++  find_package(dlfcn-win32 REQUIRED)
++  get_target_property(DLFCN_INCLUDE_DIRS dlfcn-win32::dl INTERFACE_INCLUDE_DIRECTORIES)
++  include_directories(${DLFCN_INCLUDE_DIRS})
++endif()
+ # LLVM/MLIR range comparisons can trigger -Wambiguous-reversed-operator in
+ # C++20. Treat these external headers as system includes.
+ include_directories(SYSTEM ${MLIR_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS})
+@@ -449,7 +454,7 @@ if(TRITON_BUILD_PYTHON_MODULE)
+   set_target_properties(triton PROPERTIES INTERFACE_LINK_LIBRARIES "")
+ 
+   if(WIN32)
+-    target_link_libraries(triton PRIVATE ${CMAKE_DL_LIBS})
++    target_link_libraries(triton PRIVATE dlfcn-win32::dl)
+     set_target_properties(triton PROPERTIES SUFFIX ".pyd")
+     set_target_properties(triton PROPERTIES PREFIX "lib")
+   else()
+@@ -483,8 +488,8 @@ if(TRITON_BUILD_PYTHON_MODULE)
+   endif()
+ 
+   configure_file(
+-    "${LLVM_SYSPATH}/bin/FileCheck"
+-    "${TRITON_WHEEL_DIR}/FileCheck"
++    "${LLVM_SYSPATH}/bin/FileCheck${CMAKE_EXECUTABLE_SUFFIX}"
++    "${TRITON_WHEEL_DIR}/FileCheck${CMAKE_EXECUTABLE_SUFFIX}"
+     COPYONLY)
+ 
+   # Install Triton headers and TableGen definitions into the wheel staging
+diff --git a/setup.py b/setup.py
+index 7a12082..66208d9 100644
+--- a/setup.py
++++ b/setup.py
+@@ -386,7 +386,10 @@ class CMakeBuild(build_ext):
+         env = os.environ.copy()
+         cmake_dir = get_cmake_dir()
+         subprocess.check_call(["cmake", self.base_dir] + cmake_args, cwd=cmake_dir, env=env)
+-        update_symlink(Path(self.base_dir) / "compile_commands.json", cmake_dir / "compile_commands.json")
++        try:
++            update_symlink(Path(self.base_dir) / "compile_commands.json", cmake_dir / "compile_commands.json")
++        except OSError as e:
++            print(f"could not symlink compile_commands.json: {e}", file=sys.stderr)
+         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=cmake_dir)
+         subprocess.check_call(["cmake", "--build", ".", "--target", "mlir-doc"], cwd=cmake_dir)
+         if check_env_flag("TRITON_EXT_ENABLED"):
+diff --git a/third_party/nvidia/include/cublas_instance.h b/third_party/nvidia/include/cublas_instance.h
+index 3d69ba1..a8b6570 100644
+--- a/third_party/nvidia/include/cublas_instance.h
++++ b/third_party/nvidia/include/cublas_instance.h
+@@ -3,6 +3,9 @@
+ 
+ #include "cublas_types.h"
+ #include <dlfcn.h>
++#ifndef RTLD_NOLOAD
++#define RTLD_NOLOAD 0
++#endif
+ #include <stdexcept>
+ #include <string>
+ 
+@@ -41,7 +44,12 @@ private:
+       const cublasLtMatrixLayout_t, const cublasLtMatmulAlgo_t *, void *,
+       size_t, cudaStream_t);
+ 
++#ifdef _WIN32
++  static constexpr const char *name = "cublasLt64_13.dll";
++  static constexpr const char *fallbackName = "cublasLt64_12.dll";
++#else
+   static constexpr const char *name = "libcublas.so";
++#endif
+ 
+   cublasLtCreate_t cublasLtCreate;
+   cublasLtDestroy_t cublasLtDestroy;
+@@ -73,6 +81,11 @@ private:
+       // If not found, try to load it
+       dylibHandle = dlopen(name, RTLD_LOCAL | RTLD_LAZY);
+     }
++#ifdef _WIN32
++    if (dylibHandle == nullptr) {
++      dylibHandle = dlopen(fallbackName, RTLD_LOCAL | RTLD_LAZY);
++    }
++#endif
+     if (dylibHandle == nullptr) {
+       throw std::runtime_error("Could not find `" + std::string(name) +
+                                "`. Make sure it is in your "
