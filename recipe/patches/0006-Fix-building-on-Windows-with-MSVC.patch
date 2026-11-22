@@ -6,9 +6,11 @@ Subject: [PATCH] Fix building on Windows with MSVC and conda-forge dlfcn-win32
 ---
  CMakeLists.txt                               | 11 ++++++++---
  setup.py                                     |  5 ++++-
+ third_party/amd/include/hipblas_instance.h   |  3 +++
  third_party/nvidia/CMakeLists.txt            |  6 ++++++
  third_party/nvidia/include/cublas_instance.h | 13 +++++++++++++
- 4 files changed, 31 insertions(+), 4 deletions(-)
+ third_party/nvidia/triton_nvidia.cc          |  4 ++++
+ 6 files changed, 38 insertions(+), 4 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 1713a47..a886454 100644
@@ -62,6 +64,20 @@ index 7a12082..66208d9 100644
          subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=cmake_dir)
          subprocess.check_call(["cmake", "--build", ".", "--target", "mlir-doc"], cwd=cmake_dir)
          if check_env_flag("TRITON_EXT_ENABLED"):
+diff --git a/third_party/amd/include/hipblas_instance.h b/third_party/amd/include/hipblas_instance.h
+index 5f1c8e1..f6a6f21 100644
+--- a/third_party/amd/include/hipblas_instance.h
++++ b/third_party/amd/include/hipblas_instance.h
+@@ -3,6 +3,9 @@
+ 
+ #include "hipblas_types.h"
+ #include <dlfcn.h>
++#ifndef RTLD_NOLOAD
++#define RTLD_NOLOAD 0
++#endif
+ #include <sstream>
+ #include <stdexcept>
+ #include <string>
 diff --git a/third_party/nvidia/CMakeLists.txt b/third_party/nvidia/CMakeLists.txt
 index ba831b7..7583a2b 100644
 --- a/third_party/nvidia/CMakeLists.txt
@@ -125,3 +141,19 @@ index 3d69ba1..a8b6570 100644
      if (dylibHandle == nullptr) {
        throw std::runtime_error("Could not find `" + std::string(name) +
                                 "`. Make sure it is in your "
+diff --git a/third_party/nvidia/triton_nvidia.cc b/third_party/nvidia/triton_nvidia.cc
+index ea76409..5f5116e 100644
+--- a/third_party/nvidia/triton_nvidia.cc
++++ b/third_party/nvidia/triton_nvidia.cc
+@@ -78,7 +78,11 @@ public:
+   }
+ 
+   CudaExampleUtils() {
++#ifdef _WIN32
++    dylibHandle = dlopen("nvcuda.dll", RTLD_NOLOAD | RTLD_LAZY);
++#else
+     dylibHandle = dlopen("libcuda.so.1", RTLD_NOLOAD | RTLD_LAZY);
++#endif
+     if (dylibHandle == nullptr) {
+       throw std::runtime_error(
+           "Could not find an already-loaded `libcuda.so.1`. Initialize "
