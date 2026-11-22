@@ -4,13 +4,14 @@ Date: Sun, 22 Nov 2026 16:59:08 -0500
 Subject: [PATCH] Fix building on Windows with MSVC and conda-forge dlfcn-win32
 
 ---
- CMakeLists.txt                               | 11 ++++++++---
- setup.py                                     |  5 ++++-
- third_party/amd/include/hipblas_instance.h   |  3 +++
- third_party/nvidia/CMakeLists.txt            |  6 ++++++
- third_party/nvidia/include/cublas_instance.h | 13 +++++++++++++
- third_party/nvidia/triton_nvidia.cc          |  4 ++++
- 6 files changed, 38 insertions(+), 4 deletions(-)
+ CMakeLists.txt                               | 11 ++++++--
+ python/triton/experimental/gsan/src/GSan.h   | 29 ++++++++++++++++++--
+ setup.py                                     |  5 +++-
+ third_party/amd/include/hipblas_instance.h   |  3 ++
+ third_party/nvidia/CMakeLists.txt            |  6 ++++
+ third_party/nvidia/include/cublas_instance.h | 13 +++++++++
+ third_party/nvidia/triton_nvidia.cc          |  4 +++
+ 7 files changed, 65 insertions(+), 6 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 1713a47..a886454 100644
@@ -48,6 +49,69 @@ index 1713a47..a886454 100644
      COPYONLY)
  
    # Install Triton headers and TableGen definitions into the wheel staging
+diff --git a/python/triton/experimental/gsan/src/GSan.h b/python/triton/experimental/gsan/src/GSan.h
+index 0512e63..7452309 100644
+--- a/python/triton/experimental/gsan/src/GSan.h
++++ b/python/triton/experimental/gsan/src/GSan.h
+@@ -11,8 +11,23 @@
+ #define GSAN_HOST_DEVICE
+ #endif
+ 
++#ifdef _MSC_VER
++#include <cstddef>
++#include <cstdint>
++#endif
++
+ namespace gsan {
+ 
++#ifdef _MSC_VER
++using size_t = ::size_t;
++using int16_t = ::int16_t;
++using int64_t = ::int64_t;
++using uint8_t = ::uint8_t;
++using uint16_t = ::uint16_t;
++using uint32_t = ::uint32_t;
++using uintptr_t = ::uintptr_t;
++using uint64_t = ::uint64_t;
++#else
+ using size_t = __SIZE_TYPE__;
+ using int16_t = __INT16_TYPE__;
+ using int64_t = __INT64_TYPE__;
+@@ -21,6 +36,16 @@ using uint16_t = __UINT16_TYPE__;
+ using uint32_t = __UINT32_TYPE__;
+ using uintptr_t = __UINTPTR_TYPE__;
+ using uint64_t = __UINT64_TYPE__;
++#endif
++
++// MSVC only packs adjacent bitfields whose declared types have the same size
++#ifdef _MSC_VER
++using atomic_scope_storage_t = uint16_t;
++using bool_bitfield_t = uint16_t;
++#else
++using atomic_scope_storage_t = uint8_t;
++using bool_bitfield_t = bool;
++#endif
+ 
+ // The table and its pointer lists are immutable while in flight.
+ // Clocks use u32 so all CTAs can publish with a native atomic maximum.
+@@ -41,7 +66,7 @@ static_assert((kReserveSize & (kReserveSize - 1)) == 0,
+ 
+ using thread_id_t = uint16_t;
+ 
+-enum class AtomicScope : uint8_t {
++enum class AtomicScope : atomic_scope_storage_t {
+   NonAtomic,
+   CTA,
+   GPU,
+@@ -57,7 +82,7 @@ struct alignas(4) ScalarClock {
+   AtomicScope scope : 2;
+   // For a release write, the epoch is actually an index into the thread's
+   // circular clock buffer where the full vector clock is stored.
+-  bool isRelease : 1;
++  bool_bitfield_t isRelease : 1;
+ };
+ static constexpr int kMaxThreads = 1 << 12;
+ static_assert(sizeof(ScalarClock) == 4);
 diff --git a/setup.py b/setup.py
 index 7a12082..66208d9 100644
 --- a/setup.py
