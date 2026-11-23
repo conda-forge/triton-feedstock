@@ -7,3 +7,7 @@ github:
   tooling_branch_name: main
 provider:
   linux_aarch64: default
+workflow_settings:
+  store_build_artifacts:
+  - platform: win_64
+    value: true
