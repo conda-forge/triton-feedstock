@@ -22,6 +22,7 @@ source:
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
       - patches/0005-Make-test_aot-importable-without-a-GPU-backend.patch
       - patches/0006-Fix-building-on-Windows-with-MSVC.patch
+      - patches/0007-Close-ptxas-temporary-files-before-removing-them.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
     sha256: 975ad64f584955a714bddd1a3413db14ba3c8cca8292dc020ab58ac4c09decad
     target_directory: llvm-project
