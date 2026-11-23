@@ -1,0 +1,1235 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Mon, 23 Nov 2026 08:38:22 -0500
+Subject: [PATCH] Windows runtime support from triton-windows
+
+Taken from https://github.com/triton-lang/triton-windows (v3.9.0-windows.post30):
+runtime/build.py (MSVC, clang-cl and bundled TinyCC compilers),
+windows_utils.py (MSVC/Windows SDK/CUDA/Python discovery), cache.py,
+driver.py, the NVIDIA launcher (nvcuda.dll via LoadLibrary, aligned
+allocation, TinyCC-compatible initializers) and named pipes for the
+warmup pool. The gcc/clang command line on non-Windows is kept as
+upstream.
+---
+ python/triton/_compile_warmup_pool.py         |  14 +-
+ python/triton/experimental/gsan/_allocator.py |   3 +-
+ python/triton/runtime/build.py                | 156 ++++-
+ python/triton/runtime/cache.py                |  18 +-
+ python/triton/runtime/driver.py               |  15 +-
+ python/triton/windows_utils.py                | 536 ++++++++++++++++++
+ third_party/nvidia/backend/driver.c           | 129 +++--
+ third_party/nvidia/backend/driver.py          |  38 +-
+ 8 files changed, 823 insertions(+), 86 deletions(-)
+ create mode 100644 python/triton/windows_utils.py
+
+diff --git a/python/triton/_compile_warmup_pool.py b/python/triton/_compile_warmup_pool.py
+index b17e224..c98e312 100644
+--- a/python/triton/_compile_warmup_pool.py
++++ b/python/triton/_compile_warmup_pool.py
+@@ -23,6 +23,8 @@ from cloudpickle.cloudpickle import CloudPickler, _extract_code_globals
+ 
+ import triton
+ 
++_CONNECTION_FAMILY = "AF_PIPE" if os.name == "nt" else "AF_UNIX"
++
+ 
+ class _UnsupportedPreloadError(Exception):
+     pass
+@@ -334,7 +336,7 @@ class ProcessPoolWarmupDispatcher:
+         if max_workers < 1:
+             raise ValueError(f"max_workers must be >= 1, got {max_workers}")
+         coordinator = os.environ.get("TRITON_WARMUP_COORDINATOR")
+-        self._connection = Client(coordinator, family="AF_UNIX") if coordinator else None
++        self._connection = Client(coordinator, family=_CONNECTION_FAMILY) if coordinator else None
+         self._executor = None
+         if self._connection is None:
+             context = mp.get_context("spawn")
+@@ -564,8 +566,12 @@ class SharedWarmupCoordinator:
+ 
+     def __init__(self, *, max_workers, trace_directory):
+         self._directory = tempfile.TemporaryDirectory(prefix="triton-warmup-")
+-        self.address = os.path.join(self._directory.name, "coordinator.sock")
+-        self._listener = Listener(self.address, family="AF_UNIX")
++        self.family = _CONNECTION_FAMILY
++        if self.family == "AF_PIPE":
++            self.address = rf"\\.\pipe\{os.path.basename(self._directory.name)}-coordinator"
++        else:
++            self.address = os.path.join(self._directory.name, "coordinator.sock")
++        self._listener = Listener(self.address, family=self.family)
+         self._dispatcher = ProcessPoolWarmupDispatcher(max_workers=max_workers, trace_directory=trace_directory,
+                                                        phase="warmup")
+         self._connections = []
+@@ -598,7 +604,7 @@ class SharedWarmupCoordinator:
+             connection.close()
+ 
+     def close(self):
+-        stopper = Client(self.address, family="AF_UNIX")
++        stopper = Client(self.address, family=self.family)
+         stopper.send(None)
+         stopper.close()
+         self._accept_thread.join()
+diff --git a/python/triton/experimental/gsan/_allocator.py b/python/triton/experimental/gsan/_allocator.py
+index cf45d54..133545c 100644
+--- a/python/triton/experimental/gsan/_allocator.py
++++ b/python/triton/experimental/gsan/_allocator.py
+@@ -2,6 +2,7 @@ from __future__ import annotations
+ 
+ import functools
+ import gc
++import os
+ from enum import IntEnum
+ from pathlib import Path
+ from types import ModuleType
+@@ -31,7 +32,7 @@ def _load_gsan_module() -> ModuleType:
+         name="gsan_allocator",
+         library_dirs=library_dirs(),
+         include_dirs=include_dirs,
+-        libraries=["libcuda.so.1"],
++        libraries=["cuda"] if os.name == "nt" else ["libcuda.so.1"],
+     )
+ 
+ 
+diff --git a/python/triton/runtime/build.py b/python/triton/runtime/build.py
+index 636a2e2..10b2e57 100644
+--- a/python/triton/runtime/build.py
++++ b/python/triton/runtime/build.py
+@@ -19,6 +19,12 @@ from types import ModuleType
+ from .cache import get_cache_manager
+ from .. import knobs
+ 
++if os.name == "nt":
++    from triton.windows_utils import find_msvc_winsdk, find_python, get_8dot3_short_path, normalize_path
++else:
++    normalize_path = os.path.abspath
++    get_8dot3_short_path = os.path.abspath
++
+ 
+ @functools.lru_cache()
+ def _find_compiler(language: str) -> str:
+@@ -26,9 +32,23 @@ def _find_compiler(language: str) -> str:
+         cc = os.environ.get("CC")
+         if cc is not None:
+             return cc
+-        clang = shutil.which("clang")
++        # clang-cl from TheRock ROCm wheels (handles HIP C headers that mix C/C++ constructs)
++        cc = os.path.join(sysconfig.get_path("platlib"), "_rocm_sdk_core", "lib", "llvm", "bin", "clang-cl.exe")
++        if os.path.exists(cc):
++            return cc
++        if os.name == "nt":
++            # Find and check MSVC and Windows SDK from environment variables set by Launch-VsDevShell.ps1 or VsDevCmd.bat
++            cc, _, _ = find_msvc_winsdk(env_only=True)
++            if cc is not None:
++                return cc
++        # Bundled TinyCC
++        cc = os.path.join(sysconfig.get_path("platlib"), "triton", "runtime", "tcc", "tcc.exe")
++        if os.path.exists(cc):
++            return cc
++        cl = shutil.which("cl")
+         gcc = shutil.which("gcc")
+-        cc = gcc if gcc is not None else clang
++        clang = shutil.which("clang")
++        cc = cl if cl is not None else gcc if gcc is not None else clang
+         if cc is not None:
+             return cc
+         raise RuntimeError(
+@@ -38,13 +58,19 @@ def _find_compiler(language: str) -> str:
+     cxx = os.environ.get("CXX")
+     if cxx is not None:
+         return cxx
+-
+-    clangxx = shutil.which("clang++")
++    cxx = os.path.join(sysconfig.get_path("platlib"), "_rocm_sdk_core", "lib", "llvm", "bin", "clang-cl.exe")
++    if os.path.exists(cxx):
++        return cxx
++    if os.name == "nt":
++        cxx, _, _ = find_msvc_winsdk(env_only=True)
++        if cxx is not None:
++            return cxx
++    cl = shutil.which("cl")
+     gxx = shutil.which("g++")
+-    cxx = gxx if gxx is not None else clangxx
++    clangxx = shutil.which("clang++")
++    cxx = cl if cl is not None else gxx if gxx is not None else clangxx
+     if cxx is not None:
+         return cxx
+-
+     raise RuntimeError(
+         "Failed to find C++ compiler. Please specify via CXX environment variable or set triton.knobs.build.impl.")
+ 
+@@ -59,13 +85,85 @@ def _language_from_filename(source_name: str) -> str:
+     raise ValueError(f"Unrecognized file extension: {source_name}")
+ 
+ 
++def is_tcc(cc):
++    cc = os.path.basename(cc).lower()
++    return cc == "tcc" or cc == "tcc.exe"
++
++
++def is_msvc(cc):
++    cc = os.path.basename(cc).lower()
++    return cc == "cl" or cc == "cl.exe"
++
++
++def is_clang_cl(cc):
++    cc = os.path.basename(cc).lower()
++    return cc == "clang-cl" or cc == "clang-cl.exe"
++
++
++def is_clang(cc):
++    cc = os.path.basename(cc).lower()
++    return cc == "clang" or cc == "clang.exe"
++
++
++def _cc_cmd(cc: str, src: str, out: str, include_dirs: list[str], library_dirs: list[str], libraries: list[str],
++            ccflags: list[str], language: str) -> list[str]:
++    if is_msvc(cc) or is_clang_cl(cc):
++        out_base = os.path.splitext(out)[0]
++        cc_cmd = [cc, src, "/nologo", "/O2", "/LD", "/wd4819"]
++        if language == "c":
++            cc_cmd += ["/std:c11"]
++        elif language == "c++":
++            cc_cmd += ["/std:c++17"]
++        if sysconfig.get_config_var("Py_GIL_DISABLED"):
++            cc_cmd += ["/DPy_GIL_DISABLED"]
++        cc_cmd += [f"/I{dir}" for dir in include_dirs if dir is not None]
++        cc_cmd += [f"/Fo{out_base + '.obj'}"]
++        cc_cmd += ["/link"]
++        cc_cmd += [f"/LIBPATH:{dir}" for dir in library_dirs]
++        cc_cmd += [f"{lib}.lib" for lib in libraries]
++        cc_cmd += [f"/OUT:{out}"]
++        cc_cmd += [f"/IMPLIB:{out_base + '.lib'}"]
++        cc_cmd += [f"/PDB:{out_base + '.pdb'}"]
++    elif os.name != "nt":
++        # for -Wno-psabi, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111047
++        cc_cmd = [cc, src, "-O3", "-shared", "-fPIC", "-Wno-psabi", "-o", out]
++        if language == "c++":
++            cc_cmd.insert(3, "-std=c++17")
++        cc_cmd += [_library_flag(lib, cc) for lib in libraries]
++        cc_cmd += [f"-L{dir}" for dir in library_dirs]
++        cc_cmd += [f"-I{dir}" for dir in include_dirs if dir is not None]
++    else:
++        # for -Wno-psabi, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111047
++        cc_cmd = [cc, src, "-O3", "-shared", "-Wno-psabi", "-o", out]
++        if language == "c":
++            cc_cmd.insert(3, "-std=c11")
++        elif language == "c++":
++            cc_cmd.insert(3, "-std=c++17")
++        if not (os.name == "nt" and is_clang(cc)):
++            # Clang does not support -fPIC on Windows
++            cc_cmd += ["-fPIC"]
++        if sysconfig.get_config_var("Py_GIL_DISABLED"):
++            cc_cmd += ["-DPy_GIL_DISABLED"]
++        cc_cmd += [f"-I{dir}" for dir in include_dirs if dir is not None]
++        cc_cmd += [f"-L{dir}" for dir in library_dirs]
++        cc_cmd += [_library_flag(lib, cc) for lib in libraries]
++    cc_cmd += ccflags
++    return cc_cmd
++
++
+ def _build(name: str, src: str, srcdir: str, library_dirs: list[str], include_dirs: list[str], libraries: list[str],
+            ccflags: list[str], language: str = "c") -> str:
+     if impl := knobs.build.impl:
+         return impl(name, src, srcdir, library_dirs, include_dirs, libraries)
++
++    cc = _find_compiler(language)
++    if is_msvc(cc):
++        # MSVC does not support UNC path with \\?\ prefix. We convert it to 8.3 short path.
++        src = get_8dot3_short_path(src)
++        srcdir = get_8dot3_short_path(srcdir)
++
+     suffix = sysconfig.get_config_var('EXT_SUFFIX')
+     so = os.path.join(srcdir, f'{name}{suffix}')
+-    cc = _find_compiler(language)
+     scheme = sysconfig.get_default_scheme()
+     # 'posix_local' is a custom scheme on Debian. However, starting Python 3.10, the default install
+     # path changes to include 'local'. This change is required to use triton with system-wide python.
+@@ -73,6 +171,7 @@ def _build(name: str, src: str, srcdir: str, library_dirs: list[str], include_di
+         scheme = 'posix_prefix'
+     py_include_dir = sysconfig.get_paths(scheme=scheme)["include"]
+     custom_backend_dirs = knobs.build.backend_dirs
++    # Don't append in place
+     include_dirs = include_dirs + [srcdir, py_include_dir, *custom_backend_dirs]
+ 
+     # add conda-forge specific include directories
+@@ -93,22 +192,34 @@ def _build(name: str, src: str, srcdir: str, library_dirs: list[str], include_di
+             include_dirs.append(os.path.join(sys.prefix, arch_dependent_include))
+     elif platform.system() == "Windows":
+         include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
++    if os.name == "nt":
++        library_dirs = library_dirs + find_python()
++        version = sysconfig.get_python_version().replace(".", "")
++        if sysconfig.get_config_var("Py_GIL_DISABLED"):
++            version += "t"
++        libraries = libraries + [f"python{version}"]
++    if is_msvc(cc) or is_clang_cl(cc):
++        _, msvc_winsdk_inc_dirs, msvc_winsdk_lib_dirs = find_msvc_winsdk()
++        include_dirs = include_dirs + msvc_winsdk_inc_dirs
++        library_dirs = library_dirs + msvc_winsdk_lib_dirs
++    cc_cmd = _cc_cmd(cc, src, so, include_dirs, library_dirs, libraries, ccflags, language)
++
++    try:
++        subprocess.check_call(cc_cmd, stdout=subprocess.DEVNULL if os.name != "nt" else None)
++    except Exception as e:
++        print("Failed to compile. cc_cmd:", cc_cmd)
++        raise e
+ 
+-    # for -Wno-psabi, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111047
+-    cc_cmd = [cc, src, "-O3", "-shared", "-fPIC", "-Wno-psabi", "-o", so]
+-    if language == "c++":
+-        cc_cmd.insert(3, "-std=c++17")
+-    cc_cmd += [_library_flag(lib) for lib in libraries]
+-    cc_cmd += [f"-L{dir}" for dir in library_dirs]
+-    cc_cmd += [f"-I{dir}" for dir in include_dirs if dir is not None]
+-    cc_cmd.extend(ccflags)
+-    subprocess.check_call(cc_cmd, stdout=subprocess.DEVNULL)
+     return so
+ 
+ 
+-def _library_flag(lib: str) -> str:
++def _library_flag(lib: str, cc: str) -> str:
++    if is_msvc(cc) or is_clang_cl(cc):
++        if not lib.lower().endswith(".lib"):
++            lib = lib + ".lib"
++        return lib
+     # Match .so files with optional version numbers (e.g., .so, .so.1, .so.513.50.1)
+-    if re.search(r'\.so(\.\d+)*$', lib) or lib.endswith(".a"):
++    if re.search(r'\.so(\.\d+)*$', lib) or lib.endswith((".a", ".lib")):
+         return f"-l:{lib}"
+     return f"-l{lib}"
+ 
+@@ -128,6 +239,8 @@ def _get_file_extension(language):
+ 
+ 
+ def _load_module_from_path(name: str, path: str) -> ModuleType:
++    # Loading module with relative path may cause error. `normalize_path` normalizes to absolute path.
++    path = normalize_path(path)
+     spec = importlib.util.spec_from_file_location(name, path)
+     if not spec or not spec.loader:
+         raise RuntimeError(f"Failed to load newly compiled {name} from {path}")
+@@ -165,9 +278,11 @@ def _compile_so(src: bytes, src_path: str, name: str, library_dirs: list[str] |
+             return _load_module_from_path(name, cache_path)
+         except (RuntimeError, ImportError):
+             log = logging.getLogger(__name__)
+-            log.warning(f"Triton cache error: compiled module {name}.so could not be loaded")
++            ext = ".pyd" if os.name == "nt" else ".so"
++            log.warning(f"Triton cache error: compiled module {name}{ext} could not be loaded")
+ 
+     with tempfile.TemporaryDirectory() as tmpdir:
++        tmpdir = normalize_path(tmpdir)
+         so = _build(name, src_path, tmpdir, library_dirs or [], include_dirs or [], libraries or [], ccflags or [],
+                     language=language)
+         with open(so, "rb") as f:
+@@ -178,7 +293,7 @@ def _compile_so(src: bytes, src_path: str, name: str, library_dirs: list[str] |
+ 
+ def _compile_so_from_file(src_path: str, name: str, library_dirs: list[str] | None, include_dirs: list[str] | None,
+                           libraries: list[str] | None, ccflags: list[str] | None, load_module: bool):
+-    src_path = os.path.abspath(src_path)
++    src_path = normalize_path(src_path)
+     src_name = os.path.basename(src_path)
+     with open(src_path, "rb") as f:
+         src = f.read()
+@@ -192,6 +307,7 @@ def _compile_so_from_src(src: str, name: str, library_dirs: list[str] | None, in
+                          libraries: list[str] | None, ccflags: list[str] | None, language, load_module: bool):
+     src_bytes = src.encode("utf-8")
+     with tempfile.TemporaryDirectory() as tmpdir:
++        tmpdir = normalize_path(tmpdir)
+         src_path = os.path.join(tmpdir, f"{name}{_get_file_extension(language)}")
+         with open(src_path, "wb") as f:
+             f.write(src_bytes)
+diff --git a/python/triton/runtime/cache.py b/python/triton/runtime/cache.py
+index 01bbecc..db41903 100644
+--- a/python/triton/runtime/cache.py
++++ b/python/triton/runtime/cache.py
+@@ -10,6 +10,11 @@ import sysconfig
+ 
+ from triton import __version__, knobs
+ 
++if os.name == "nt":
++    from triton.windows_utils import normalize_path
++else:
++    normalize_path = os.path.abspath
++
+ 
+ class CacheManager(ABC):
+ 
+@@ -41,16 +46,19 @@ class FileCacheManager(CacheManager):
+         if dump:
+             self.cache_dir = knobs.cache.dump_dir
+             self.cache_dir = os.path.join(self.cache_dir, self.key)
++            self.cache_dir = normalize_path(self.cache_dir)
+             self.lock_path = os.path.join(self.cache_dir, "lock")
+             os.makedirs(self.cache_dir, exist_ok=True)
+         elif override:
+             self.cache_dir = knobs.cache.override_dir
+             self.cache_dir = os.path.join(self.cache_dir, self.key)
++            self.cache_dir = normalize_path(self.cache_dir)
+         else:
+             # create cache directory if it doesn't exist
+             self.cache_dir = knobs.cache.dir
+             if self.cache_dir:
+                 self.cache_dir = os.path.join(self.cache_dir, self.key)
++                self.cache_dir = normalize_path(self.cache_dir)
+                 self.lock_path = os.path.join(self.cache_dir, "lock")
+                 os.makedirs(self.cache_dir, exist_ok=True)
+             else:
+@@ -122,7 +130,15 @@ class FileCacheManager(CacheManager):
+             f.write(data)
+         # Replace is guaranteed to be atomic on POSIX systems if it succeeds
+         # so filepath cannot see a partial write
+-        os.replace(temp_path, filepath)
++        try:
++            os.replace(temp_path, filepath)
++        except PermissionError:
++            # Ignore PermissionError on Windows because it happens when another process already
++            # put a file into the cache and locked it by opening it.
++            if os.name == "nt":
++                os.remove(temp_path)
++            else:
++                raise
+         os.removedirs(temp_dir)
+         return filepath
+ 
+diff --git a/python/triton/runtime/driver.py b/python/triton/runtime/driver.py
+index 5801b42..a5ff0c8 100644
+--- a/python/triton/runtime/driver.py
++++ b/python/triton/runtime/driver.py
+@@ -12,7 +12,20 @@ def _create_driver() -> DriverBase:
+             raise RuntimeError(f"Unknown backend device '{selected}'. Available backends: {list(backends.keys())}")
+         driver = backends[selected].driver
+         if not driver.is_active():
+-            raise RuntimeError(f"Backend device '{selected}' is not active.")
++            msg = f"Backend device '{selected}' is not active."
++            if os.name == "nt":
++                if selected == "hip":
++                    msg += ("\n\nOn Windows, ensure that:"
++                            "\n  - ROCm for Windows is installed (e.g. 'pip install rocm-sdk')"
++                            "\n  - 'amdhip64.dll' is on your PATH"
++                            "\n  - HIP_PATH environment variable is set to the HIP SDK root"
++                            "\n  - Your AMD GPU driver is up to date")
++                elif selected == "cuda":
++                    msg += ("\n\nOn Windows, ensure that:"
++                            "\n  - CUDA Toolkit is installed (https://developer.nvidia.com/cuda-downloads)"
++                            "\n  - 'nvcuda.dll' is on your PATH"
++                            "\n  - Your NVIDIA GPU driver is up to date")
++            raise RuntimeError(msg)
+         return driver()
+     else:
+         active_drivers = [x.driver for x in backends.values() if x.driver.is_active()]
+diff --git a/python/triton/windows_utils.py b/python/triton/windows_utils.py
+new file mode 100644
+index 0000000..795b129
+--- /dev/null
++++ b/python/triton/windows_utils.py
+@@ -0,0 +1,536 @@
++import ctypes
++import functools
++import os
++import re
++import subprocess
++import sys
++import sysconfig
++import warnings
++import winreg
++from collections.abc import Iterable
++from ctypes import wintypes
++from functools import partial
++from glob import glob
++from pathlib import Path
++from typing import Callable, Optional
++
++
++def find_in_program_files(rel_path: str) -> Optional[Path]:
++    program_files = os.getenv("ProgramFiles(x86)", r"C:\Program Files (x86)")
++    path = Path(program_files) / rel_path
++    if path.exists():
++        return path
++
++    program_files = os.getenv("ProgramW6432", r"C:\Program Files")
++    path = Path(program_files) / rel_path
++    if path.exists():
++        return path
++
++    return None
++
++
++def parse_version(s: str, prefix: str = "") -> Optional[tuple[int, ...]]:
++    s = s.removeprefix(prefix)
++    try:
++        return tuple(int(x) for x in s.split("."))
++    except ValueError:
++        return None
++
++
++def unparse_version(t: Iterable[int], prefix: str = "") -> str:
++    return prefix + ".".join([str(x) for x in t])
++
++
++def max_version(
++    versions: Iterable[str],
++    prefix: str = "",
++    check: Callable[[str], bool] = lambda x: True,
++) -> Optional[str]:
++    versions = [x for x in versions if check(x)]
++    versions = [parse_version(x, prefix) for x in versions]
++    versions = [x for x in versions if x is not None]
++    if not versions:
++        return None
++    version = unparse_version(max(versions), prefix)
++    return version
++
++
++def _normalize_arch(arch: Optional[str]) -> str:
++    arch = (arch or "").strip().lower()
++    mapping = {
++        "x64": "x64",
++        "amd64": "x64",
++        "x86_64": "x64",
++        "arm64": "arm64",
++        "aarch64": "arm64",
++    }
++    return mapping.get(arch, "x64")
++
++
++def _target_arch() -> str:
++    return _normalize_arch(
++        os.getenv("VSCMD_ARG_TGT_ARCH") or os.getenv("Platform") or os.getenv("PROCESSOR_ARCHITECTURE")
++        or os.getenv("PROCESSOR_ARCHITEW6432"))
++
++
++def _host_arch() -> str:
++    return _normalize_arch(os.getenv("VSCMD_ARG_HOST_ARCH") or _target_arch())
++
++
++def _msvc_host_dir() -> str:
++    host = _host_arch()
++    return "HostARM64" if host == "arm64" else "Hostx64"
++
++
++def _arch_candidates() -> list[str]:
++    target = _target_arch()
++    return [target] if target == "x64" else [target, "x64"]
++
++
++def check_msvc(msvc_base_path: Path, version: str) -> bool:
++    target_arch = _target_arch()
++    host_dir = _msvc_host_dir()
++    return all(x.exists() for x in [
++        msvc_base_path / version / "bin" / host_dir / target_arch / "cl.exe",
++        msvc_base_path / version / "include" / "vcruntime.h",
++        msvc_base_path / version / "lib" / target_arch / "vcruntime.lib",
++    ])
++
++
++def find_msvc_env() -> tuple[Optional[Path], Optional[str]]:
++    msvc_base_path = os.getenv("VCINSTALLDIR")
++    if msvc_base_path is None:
++        return None, None
++    msvc_base_path = Path(msvc_base_path) / "Tools" / "MSVC"
++
++    version = os.getenv("VCToolsVersion")
++    if not check_msvc(msvc_base_path, version):
++        warnings.warn(f"Environment variables VCINSTALLDIR = {os.getenv('VCINSTALLDIR')}, "
++                      f"VCToolsVersion = {os.getenv('VCToolsVersion')} are set, "
++                      "but this MSVC installation is incomplete.")
++        return None, None
++
++    return msvc_base_path, version
++
++
++def vswhere_cmd(vswhere_path: Path, win11_sdk: bool) -> list[str]:
++    return [
++        str(vswhere_path),
++        "-prerelease",
++        "-products",
++        "*",
++        "-requires",
++        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
++        "-requires",
++        # Windows11SDK has a version suffix like Microsoft.VisualStudio.Component.Windows11SDK.28000
++        "Microsoft.VisualStudio.Component.Windows11SDK*"
++        if win11_sdk else "Microsoft.VisualStudio.Component.Windows10SDK",
++        "-latest",
++        "-property",
++        "installationPath",
++    ]
++
++
++def find_msvc_vswhere() -> tuple[Optional[Path], Optional[str]]:
++    vswhere_path = find_in_program_files(r"Microsoft Visual Studio\Installer\vswhere.exe")
++    if vswhere_path is None:
++        return None, None
++
++    command = vswhere_cmd(vswhere_path, win11_sdk=True)
++    try:
++        output = subprocess.check_output(command, text=True).strip()
++    except subprocess.CalledProcessError:
++        return None, None
++
++    if not output:
++        command = vswhere_cmd(vswhere_path, win11_sdk=False)
++        try:
++            output = subprocess.check_output(command, text=True).strip()
++        except subprocess.CalledProcessError:
++            return None, None
++
++    msvc_base_path = Path(output) / "VC" / "Tools" / "MSVC"
++    if not msvc_base_path.exists():
++        return None, None
++
++    version = max_version(os.listdir(msvc_base_path), check=partial(check_msvc, msvc_base_path))
++    if version is None:
++        return None, None
++
++    return msvc_base_path, version
++
++
++def find_msvc_envpath() -> tuple[Optional[Path], Optional[str]]:
++    paths = os.getenv("PATH", "").split(os.pathsep)
++    for path in paths:
++        path = path.replace("/", "\\")
++        match = re.compile(r".*\\VC\\Tools\\MSVC\\").match(path)
++        if not match:
++            continue
++
++        msvc_base_path = Path(match.group(0))
++        if not msvc_base_path.exists():
++            continue
++
++        version = max_version(os.listdir(msvc_base_path), check=partial(check_msvc, msvc_base_path))
++        if version is None:
++            continue
++
++        return msvc_base_path, version
++
++    return None, None
++
++
++def find_msvc_hardcoded() -> tuple[Optional[Path], Optional[str]]:
++    vs_path = find_in_program_files("Microsoft Visual Studio")
++    if vs_path is None:
++        return None, None
++
++    paths = glob(str(vs_path / "*" / "*" / "VC" / "Tools" / "MSVC"))
++    # First try the highest version
++    paths = sorted(paths)[::-1]
++    for msvc_base_path in paths:
++        msvc_base_path = Path(msvc_base_path)
++        version = max_version(os.listdir(msvc_base_path), check=partial(check_msvc, msvc_base_path))
++        if version is None:
++            continue
++        return msvc_base_path, version
++
++    return None, None
++
++
++def find_msvc(env_only: bool) -> tuple[Optional[str], list[str], list[str]]:
++    if env_only:
++        fs = [find_msvc_env]
++    else:
++        fs = [
++            find_msvc_env,
++            find_msvc_vswhere,
++            find_msvc_envpath,
++            find_msvc_hardcoded,
++        ]
++    for f in fs:
++        msvc_base_path, version = f()
++        if msvc_base_path:
++            target_arch = _target_arch()
++            host_dir = _msvc_host_dir()
++            return (
++                str(msvc_base_path / version / "bin" / host_dir / target_arch / "cl.exe"),
++                [str(msvc_base_path / version / "include")],
++                [str(msvc_base_path / version / "lib" / target_arch)],
++            )
++
++    if not env_only:
++        warnings.warn("Failed to find MSVC."
++                      " Install Visual Studio Build Tools (https://visualstudio.microsoft.com/downloads/)"
++                      " or set the CC environment variable to your C compiler.")
++    return None, [], []
++
++
++def check_winsdk(winsdk_base_path: Path, version: str) -> bool:
++    target_arch = _target_arch()
++    return all(x.exists() for x in [
++        winsdk_base_path / "Include" / version / "ucrt" / "stdlib.h",
++        winsdk_base_path / "Lib" / version / "ucrt" / target_arch / "ucrt.lib",
++    ])
++
++
++def find_winsdk_env() -> tuple[Optional[Path], Optional[str]]:
++    winsdk_base_path = os.getenv("WindowsSdkDir")
++    if winsdk_base_path is None:
++        return None, None
++    winsdk_base_path = Path(winsdk_base_path)
++
++    version = os.getenv("WindowsSDKVersion")
++    if version is None:
++        version = os.getenv("WindowsSDKVer")
++    if version is None:
++        warnings.warn(f"Environment variable WindowsSdkDir = {winsdk_base_path}, "
++                      "but WindowsSDKVersion (or WindowsSDKVer) is not set.")
++        return None, None
++    version = version.rstrip("\\")
++    if not check_winsdk(winsdk_base_path, version):
++        warnings.warn(f"Environment variables WindowsSdkDir = {winsdk_base_path}, "
++                      f"WindowsSDKVersion (or WindowsSDKVer) = {version} are set, "
++                      "but this Windows SDK installation is incomplete.")
++        return None, None
++
++    return winsdk_base_path, version
++
++
++def find_winsdk_registry() -> tuple[Optional[Path], Optional[str]]:
++    try:
++        reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
++        key = winreg.OpenKeyEx(reg, r"SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0")
++        folder = winreg.QueryValueEx(key, "InstallationFolder")[0]
++        winreg.CloseKey(key)
++    except OSError:
++        return None, None
++
++    winsdk_base_path = Path(folder)
++    if not (winsdk_base_path / "Include").exists():
++        return None, None
++
++    version = max_version(
++        os.listdir(winsdk_base_path / "Include"),
++        check=partial(check_winsdk, winsdk_base_path),
++    )
++    if version is None:
++        return None, None
++
++    return winsdk_base_path, version
++
++
++def find_winsdk_hardcoded() -> tuple[Optional[Path], Optional[str]]:
++    winsdk_base_path = find_in_program_files(r"Windows Kits\10")
++    if winsdk_base_path is None:
++        return None, None
++    if not (winsdk_base_path / "Include").exists():
++        return None, None
++
++    version = max_version(
++        os.listdir(winsdk_base_path / "Include"),
++        check=partial(check_winsdk, winsdk_base_path),
++    )
++    if version is None:
++        return None, None
++
++    return winsdk_base_path, version
++
++
++def find_winsdk(env_only: bool) -> tuple[list[str], list[str]]:
++    if env_only:
++        fs = [find_winsdk_env]
++    else:
++        fs = [
++            find_winsdk_env,
++            find_winsdk_registry,
++            find_winsdk_hardcoded,
++        ]
++    for f in fs:
++        winsdk_base_path, version = f()
++        if winsdk_base_path:
++            target_arch = _target_arch()
++            return (
++                [
++                    str(winsdk_base_path / "Include" / version / "shared"),
++                    str(winsdk_base_path / "Include" / version / "ucrt"),
++                    str(winsdk_base_path / "Include" / version / "um"),
++                ],
++                [
++                    str(winsdk_base_path / "Lib" / version / "ucrt" / target_arch),
++                    str(winsdk_base_path / "Lib" / version / "um" / target_arch),
++                ],
++            )
++
++    if not env_only:
++        warnings.warn("Failed to find Windows SDK."
++                      " Install it via Visual Studio Installer or from"
++                      " https://developer.microsoft.com/windows/downloads/windows-sdk/")
++    return [], []
++
++
++@functools.cache
++def find_msvc_winsdk(env_only: bool = False) -> tuple[Optional[str], list[str], list[str]]:
++    msvc_bin_path, msvc_inc_dirs, msvc_lib_dirs = find_msvc(env_only)
++    winsdk_inc_dirs, winsdk_lib_dirs = find_winsdk(env_only)
++    return (
++        msvc_bin_path,
++        msvc_inc_dirs + winsdk_inc_dirs,
++        msvc_lib_dirs + winsdk_lib_dirs,
++    )
++
++
++@functools.cache
++def find_python() -> list[str]:
++    version = sysconfig.get_python_version().replace(".", "")
++    if sysconfig.get_config_var("Py_GIL_DISABLED"):
++        version += "t"
++    for python_base_path in [
++            sys.exec_prefix,
++            sys.base_exec_prefix,
++            os.path.dirname(sys.executable),
++    ]:
++        python_lib_dir = Path(python_base_path) / "libs"
++        if (python_lib_dir / f"python{version}.lib").exists():
++            return [str(python_lib_dir)]
++
++    warnings.warn("Failed to find Python libs."
++                  " Ensure you are using an official Python distribution"
++                  " and python3XX.lib exists in your Python installation.")
++    return []
++
++
++def check_and_find_cuda(base_path: Path) -> tuple[Optional[str], list[str], list[str]]:
++    # pip
++    for arch in _arch_candidates():
++        if all(x.exists() for x in [
++                base_path / "cuda_nvcc" / "bin" / "ptxas.exe",
++                base_path / "cuda_runtime" / "include" / "cuda.h",
++                base_path / "cuda_runtime" / "lib" / arch / "cuda.lib",
++        ]):
++            return (
++                str(base_path / "cuda_nvcc" / "bin"),
++                [str(base_path / "cuda_runtime" / "include")],
++                [str(base_path / "cuda_runtime" / "lib" / arch)],
++            )
++
++    # conda
++    if all(x.exists() for x in [
++            base_path / "bin" / "ptxas.exe",
++            base_path / "include" / "cuda.h",
++            base_path / "lib" / "cuda.lib",
++    ]):
++        return (
++            str(base_path / "bin"),
++            [str(base_path / "include")],
++            [str(base_path / "lib")],
++        )
++
++    # bundled or system-wide
++    for arch in _arch_candidates():
++        if all(x.exists() for x in [
++                base_path / "bin" / "ptxas.exe",
++                base_path / "include" / "cuda.h",
++                base_path / "lib" / arch / "cuda.lib",
++        ]):
++            return (
++                str(base_path / "bin"),
++                [str(base_path / "include")],
++                [str(base_path / "lib" / arch)],
++            )
++
++    return None, [], []
++
++
++def find_cuda_env() -> tuple[Optional[str], list[str], list[str]]:
++    for cuda_base_path in ["CUDA_PATH", "CUDA_HOME"]:
++        cuda_base_path = os.getenv(cuda_base_path)
++        if cuda_base_path is None:
++            continue
++
++        cuda_base_path = Path(cuda_base_path)
++        cuda_bin_path, cuda_inc_dirs, cuda_lib_dirs = check_and_find_cuda(cuda_base_path)
++        if cuda_bin_path:
++            return cuda_bin_path, cuda_inc_dirs, cuda_lib_dirs
++
++    return None, [], []
++
++
++def find_cuda_bundled() -> tuple[Optional[str], list[str], list[str]]:
++    cuda_base_path = (Path(sysconfig.get_paths()["platlib"]) / "triton" / "backends" / "nvidia")
++    return check_and_find_cuda(cuda_base_path)
++
++
++def find_cuda_pip() -> tuple[Optional[str], list[str], list[str]]:
++    nvidia_base_path = Path(sysconfig.get_paths()["platlib"]) / "nvidia"
++    return check_and_find_cuda(nvidia_base_path)
++
++
++def find_cuda_conda() -> tuple[Optional[str], list[str], list[str]]:
++    cuda_base_path = Path(sys.exec_prefix) / "Library"
++    return check_and_find_cuda(cuda_base_path)
++
++
++def find_cuda_hardcoded() -> tuple[Optional[str], list[str], list[str]]:
++    parent = find_in_program_files(r"NVIDIA GPU Computing Toolkit\CUDA")
++    if parent is None:
++        return None, [], []
++
++    paths = glob(str(parent / "v12*"))
++    # First try the highest version
++    paths = sorted(paths)[::-1]
++    for cuda_base_path in paths:
++        cuda_base_path = Path(cuda_base_path)
++        cuda_bin_path, cuda_inc_dirs, cuda_lib_dirs = check_and_find_cuda(cuda_base_path)
++        if cuda_bin_path:
++            return cuda_bin_path, cuda_inc_dirs, cuda_lib_dirs
++
++    return None, [], []
++
++
++@functools.cache
++def find_cuda() -> tuple[Optional[str], list[str], list[str]]:
++    for f in [
++            find_cuda_env,
++            find_cuda_bundled,
++            find_cuda_pip,
++            find_cuda_conda,
++            find_cuda_hardcoded,
++    ]:
++        cuda_bin_path, cuda_inc_dirs, cuda_lib_dirs = f()
++        if cuda_bin_path:
++            return cuda_bin_path, cuda_inc_dirs, cuda_lib_dirs
++
++    warnings.warn("Failed to find CUDA."
++                  " Install CUDA Toolkit (https://developer.nvidia.com/cuda-downloads)"
++                  " or set CUDA_HOME / CUDA_PATH environment variable.")
++    return None, [], []
++
++
++@functools.cache
++def find_hip() -> tuple[Optional[str], list[str], list[str]]:
++    """Find HIP SDK paths (bin, include dirs, lib dirs) from ROCm SDK wheels."""
++    try:
++        import rocm_sdk
++        paths = rocm_sdk.find_libraries("amdhip64")
++        if paths:
++            bin_dir = str(paths[0].parent)
++            root = str(paths[0].parent.parent)
++            inc_dir = os.path.join(root, "include")
++            lib_dir = os.path.join(root, "lib")
++            inc_dirs = [inc_dir] if os.path.isdir(inc_dir) else []
++            lib_dirs = [bin_dir]
++            if os.path.isdir(lib_dir):
++                lib_dirs.append(lib_dir)
++            return bin_dir, inc_dirs, lib_dirs
++    except (ImportError, ModuleNotFoundError):
++        pass
++
++    warnings.warn(
++        "Failed to find ROCm/HIP."
++        " Install ROCm for Windows (https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installrad/windows/howto_windows.html#)"
++        " or set HIP_PATH environment variable.")
++    return None, [], []
++
++
++def normalize_path(path: str) -> str:
++    r"""Normalize to absolute path with UNC prefix \\?\ so it does not suffer from 260-char length limit."""
++    path = os.path.abspath(path).replace("/", "\\")
++
++    if path.startswith("\\\\?\\"):
++        return path
++
++    if path.startswith("\\\\.\\"):
++        # Local device path such as \\.\C:\path\to\file.c
++        # Change the prefix from \\.\ to \\?\
++        return "\\\\?\\" + path[4:]
++
++    if path.startswith("\\\\"):
++        # Standard UNC path such as \\localhost\C$\path\to\file.c or \\ServerName\ShareName\path\to\file.c
++        # Change the prefix from \\ to \\?\UNC\
++        return "\\\\?\\UNC\\" + path[2:]
++
++    # Now the path must be a non-UNC path
++    return "\\\\?\\" + path
++
++
++kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
++kernel32.GetShortPathNameW.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
++kernel32.GetShortPathNameW.restype = wintypes.DWORD
++
++
++def get_8dot3_short_path(path: str) -> str:
++    path = normalize_path(path)
++
++    req_size = kernel32.GetShortPathNameW(path, None, 0)
++    if req_size > 0:
++        buf = ctypes.create_unicode_buffer(req_size)
++        if kernel32.GetShortPathNameW(path, buf, req_size) > 0:
++            path = buf.value
++
++    if path.startswith("\\\\?\\UNC\\"):
++        return "\\\\" + path[8:]
++    if path.startswith("\\\\?\\"):
++        return path[4:]
++    return path
+diff --git a/third_party/nvidia/backend/driver.c b/third_party/nvidia/backend/driver.c
+index ad86101..c821195 100644
+--- a/third_party/nvidia/backend/driver.c
++++ b/third_party/nvidia/backend/driver.c
+@@ -1,5 +1,15 @@
++#define _CRT_SECURE_NO_WARNINGS
+ #include "cuda.h"
++
++#ifndef _WIN32
++#include <alloca.h>
+ #include <dlfcn.h>
++#else
++#define WIN32_LEAN_AND_MEAN
++#include <malloc.h>
++#include <windows.h>
++#endif
++
+ #include <stdalign.h>
+ #include <stdbool.h>
+ #include <stddef.h>
+@@ -19,16 +29,16 @@
+ #endif
+ 
+ typedef struct {
+-  PyObject_HEAD;
+-  _Alignas(alignof(CUtensorMap)) CUtensorMap tensorMap;
++  PyObject_HEAD // No extra semicolon in typedef struct
++      _Alignas(alignof(CUtensorMap)) CUtensorMap tensorMap;
+ } PyCUtensorMapObject;
+ 
+ typedef enum { ARG_CONSTEXPR = 0, ARG_KERNEL = 1, ARG_TUPLE = 2 } ArgType;
+ 
+ // Annotation struct to know how the argument should be handled.
+ typedef struct {
+-  PyObject_HEAD;
+-  PyObject *nested_tuple; // Can be a List of PyKernelArgObjects or None
++  PyObject_HEAD               // No extra semicolon in typedef struct
++      PyObject *nested_tuple; // Can be a List of PyKernelArgObjects or None
+   ArgType type;
+ } PyKernelArgObject;
+ 
+@@ -388,6 +398,7 @@ typedef CUresult (*cuLaunchKernelEx_t)(const CUlaunchConfig *config,
+                                        CUfunction f, void **kernelParams,
+                                        void **extra);
+ 
++#ifndef _WIN32
+ #define defineGetFunctionHandle(name, symbolName)                              \
+   static symbolName##_t name() {                                               \
+     /* Open the shared library */                                              \
+@@ -409,6 +420,43 @@ typedef CUresult (*cuLaunchKernelEx_t)(const CUlaunchConfig *config,
+     }                                                                          \
+     return funcHandle;                                                         \
+   }
++#else
++/* Format a Windows error code into a human-readable message. */
++static void win32_format_error(char *buf, size_t bufsize, const char *context,
++                               DWORD err) {
++  char msg[256] = {0};
++  DWORD len =
++      FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
++                     NULL, err, 0, msg, sizeof(msg), NULL);
++  while (len > 0 && (msg[len - 1] == '\r' || msg[len - 1] == '\n'))
++    msg[--len] = '\0';
++  snprintf(buf, bufsize, "%s: %s (error %lu)", context,
++           len ? msg : "Unknown error", (unsigned long)err);
++}
++#define defineGetFunctionHandle(name, symbolName)                              \
++  static symbolName##_t name() {                                               \
++    /* Open the shared library */                                              \
++    HMODULE handle = LoadLibraryA("nvcuda.dll");                               \
++    if (!handle) {                                                             \
++      char errBuf[512];                                                        \
++      win32_format_error(errBuf, sizeof(errBuf), "Failed to open nvcuda.dll",  \
++                         GetLastError());                                      \
++      PyErr_SetString(PyExc_RuntimeError, errBuf);                             \
++      return NULL;                                                             \
++    }                                                                          \
++    symbolName##_t funcHandle =                                                \
++        (symbolName##_t)GetProcAddress((HMODULE)handle, #symbolName);          \
++    if (!funcHandle) {                                                         \
++      char errBuf[512];                                                        \
++      win32_format_error(errBuf, sizeof(errBuf),                               \
++                         "Failed to retrieve " #symbolName " from nvcuda.dll", \
++                         GetLastError());                                      \
++      PyErr_SetString(PyExc_RuntimeError, errBuf);                             \
++      return NULL;                                                             \
++    }                                                                          \
++    return funcHandle;                                                         \
++  }
++#endif
+ 
+ defineGetFunctionHandle(getCuOccupancyMaxActiveClustersHandle,
+                         cuOccupancyMaxActiveClusters);
+@@ -514,7 +562,12 @@ static PyObject *PyCUtensorMap_alloc(PyTypeObject *type, Py_ssize_t n_items) {
+   void *mem = NULL;
+   size_t size = type->tp_basicsize;
+ 
++#ifdef _WIN32
++  mem = _aligned_malloc(size, 128);
++  if (mem == NULL) {
++#else
+   if (posix_memalign(&mem, 128, size) != 0) {
++#endif
+     PyErr_NoMemory();
+     return NULL;
+   }
+@@ -528,7 +581,13 @@ static void PyCUtensorMap_dealloc(PyObject *self) {
+   Py_TYPE(self)->tp_free(self);
+ }
+ 
+-static void PyCUtensorMap_free(void *ptr) { free(ptr); }
++static void PyCUtensorMap_free(void *ptr) {
++#ifdef _WIN32
++  _aligned_free(ptr);
++#else
++  free(ptr);
++#endif
++}
+ 
+ // clang-format off
+ static PyTypeObject PyCUtensorMapType = {
+@@ -1241,51 +1300,21 @@ typedef enum {
+ } ExtractorTypeIndex;
+ 
+ Extractor extraction_map[EXTRACTOR_TYPE_COUNT] = {
+-    [EXTRACTOR_UNKOWN_INDEX] =
+-        (Extractor){.extract = NULL, .size = 0, .name = NULL},
+-    [EXTRACTOR_POINTER_INDEX] = (Extractor){.extract = extractPointer,
+-                                            .size = sizeof(CUdeviceptr),
+-                                            .name = NULL},
+-    [EXTRACTOR_INT8_INDEX] = (Extractor){.extract = extractI8,
+-                                         .size = sizeof(int8_t),
+-                                         .name = {"i8"}},
+-    [EXTRACTOR_INT16_INDEX] = (Extractor){.extract = extractI16,
+-                                          .size = sizeof(int16_t),
+-                                          .name = {"i16"}},
+-    [EXTRACTOR_INT32_INDEX] = (Extractor){.extract = extractI32,
+-                                          .size = sizeof(int32_t),
+-                                          .name = {"i1", "i32"}},
+-    [EXTRACTOR_INT64_INDEX] = (Extractor){.extract = extractI64,
+-                                          .size = sizeof(int64_t),
+-                                          .name = {"i64"}},
+-    [EXTRACTOR_UINT8_INDEX] = (Extractor){.extract = extractU8,
+-                                          .size = sizeof(uint8_t),
+-                                          .name = {"u8"}},
+-    [EXTRACTOR_UINT16_INDEX] = (Extractor){.extract = extractU16,
+-                                           .size = sizeof(uint16_t),
+-                                           .name = {"u16"}},
+-    [EXTRACTOR_UINT32_INDEX] = (Extractor){.extract = extractU32,
+-                                           .size = sizeof(uint32_t),
+-                                           .name = {"u1", "u32"}},
+-    [EXTRACTOR_UINT64_INDEX] = (Extractor){.extract = extractU64,
+-                                           .size = sizeof(uint64_t),
+-                                           .name = {"u64"}},
+-    [EXTRACTOR_FP16_INDEX] = (Extractor){.extract = extractFP16,
+-                                         .size = sizeof(uint16_t),
+-                                         .name = {"fp16"}},
+-    [EXTRACTOR_BF16_INDEX] = (Extractor){.extract = extractBF16,
+-                                         .size = sizeof(uint16_t),
+-                                         .name = {"bf16"}},
+-    [EXTRACTOR_FP32_INDEX] = (Extractor){.extract = extractFP32,
+-                                         .size = sizeof(uint32_t),
+-                                         .name = {"fp32", "f32"}},
+-    [EXTRACTOR_FP64_INDEX] = (Extractor){.extract = extractFP64,
+-                                         .size = sizeof(uint64_t),
+-                                         .name = {"fp64"}},
+-    [EXTRACTOR_NVTMADESC_INDEX] = (Extractor){.extract = extractTmaDesc,
+-                                              .size = sizeof(CUtensorMap),
+-                                              .alignment = alignof(CUtensorMap),
+-                                              .name = {"nvTmaDesc"}},
++    {NULL, 0, 0, NULL},
++    {extractPointer, sizeof(CUdeviceptr), 0, NULL},
++    {extractI8, sizeof(int8_t), 0, {"i8"}},
++    {extractI16, sizeof(int16_t), 0, {"i16"}},
++    {extractI32, sizeof(int32_t), 0, {"i1", "i32"}},
++    {extractI64, sizeof(int64_t), 0, {"i64"}},
++    {extractU8, sizeof(uint8_t), 0, {"u8"}},
++    {extractU16, sizeof(uint16_t), 0, {"u16"}},
++    {extractU32, sizeof(uint32_t), 0, {"u1", "u32"}},
++    {extractU64, sizeof(uint64_t), 0, {"u64"}},
++    {extractFP16, sizeof(uint16_t), 0, {"fp16"}},
++    {extractBF16, sizeof(uint16_t), 0, {"bf16"}},
++    {extractFP32, sizeof(uint32_t), 0, {"fp32", "f32"}},
++    {extractFP64, sizeof(uint64_t), 0, {"fp64"}},
++    {extractTmaDesc, sizeof(CUtensorMap), alignof(CUtensorMap), {"nvTmaDesc"}},
+ };
+ 
+ Extractor getExtractor(uint8_t index) {
+diff --git a/third_party/nvidia/backend/driver.py b/third_party/nvidia/backend/driver.py
+index 6a71735..519c3ae 100644
+--- a/third_party/nvidia/backend/driver.py
++++ b/third_party/nvidia/backend/driver.py
+@@ -1,21 +1,30 @@
+ import functools
++import logging
+ import os
+ import subprocess
+ import triton
+ import ctypes
+ import sys
+ from triton import knobs
+-from triton._C.libtriton.gsan_testing import PER_DEVICE_STATE_STRIDE_BYTES as GSAN_PER_DEVICE_STATE_STRIDE
+ from triton._instrumentation import is_enabled
+ from triton.runtime.build import compile_module_from_file
+ from triton.runtime import _allocation
+ from triton.backends.compiler import GPUTarget
+ from triton.backends.driver import GPUDriver, decompose_descriptor, expand_signature, wrap_handle_tensordesc_impl
+ 
++logger = logging.getLogger(__name__)
++
+ dirname = os.path.dirname(os.path.realpath(__file__))
+ include_dirs = [os.path.join(dirname, "include")]
++if os.name == "nt":
++    from triton.windows_utils import find_cuda
++    _, cuda_inc_dirs, _ = find_cuda()
++    include_dirs += cuda_inc_dirs
++
++    libraries = ['cuda']
++else:
++    libraries = ['libcuda.so.1']
+ libdevice_dir = os.path.join(dirname, "lib")
+-libraries = ['libcuda.so.1']
+ PyCUtensorMap = None
+ PyKernelArg = None
+ ARG_CONSTEXPR = None
+@@ -28,6 +37,10 @@ def libcuda_dirs():
+     if env_libcuda_path := knobs.nvidia.libcuda_path:
+         return [env_libcuda_path]
+ 
++    if os.name == "nt":
++        _, _, cuda_lib_dirs = find_cuda()
++        return cuda_lib_dirs
++
+     libs = subprocess.check_output(["/sbin/ldconfig", "-p"]).decode(errors="ignore")
+     # each line looks like the following:
+     # libcuda.so.1 (libc6,x86-64) => /lib/x86_64-linux-gnu/libcuda.so.1
+@@ -53,18 +66,24 @@ def library_dirs():
+ 
+ 
+ def _cuda_driver_is_active():
+-    candidates = ["libcuda.so.1"]
+-    try:
+-        candidates.extend([os.path.join(path, "libcuda.so.1") for path in libcuda_dirs()])
+-    except Exception:
+-        pass
++    if os.name == "nt":
++        candidates = ["nvcuda.dll"]
++        load_library = ctypes.WinDLL
++    else:
++        candidates = ["libcuda.so.1"]
++        try:
++            candidates.extend([os.path.join(path, "libcuda.so.1") for path in libcuda_dirs()])
++        except Exception as e:
++            logger.debug("Failed to get libcuda dirs: %s", e)
++        load_library = ctypes.CDLL
+ 
+     libcuda = None
+     for candidate in candidates:
+         try:
+-            libcuda = ctypes.CDLL(candidate)
++            libcuda = load_library(candidate)
+             break
+-        except OSError:
++        except OSError as e:
++            logger.debug("Failed to load %s: %s", candidate, e)
+             continue
+ 
+     if libcuda is None:
+@@ -331,6 +350,7 @@ class CudaLauncher(object):
+ 
+             import triton.experimental.gsan._allocator as gsan_allocator
+             import triton.experimental.gsan._stream_sync as gsan_stream_sync
++            from triton._C.libtriton.gsan_testing import PER_DEVICE_STATE_STRIDE_BYTES as GSAN_PER_DEVICE_STATE_STRIDE
+             device = triton.runtime.driver.active.get_current_device()
+             device_rank = gsan_allocator.get_device_rank(device)
+             gsan_state_ptr = gsan_allocator.get_global_state_pointer() + device_rank * GSAN_PER_DEVICE_STATE_STRIDE
