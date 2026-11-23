@@ -58,3 +58,5 @@ cmake -G Ninja ^
 if %ERRORLEVEL% neq 0 exit 1
 cmake --build llvm-project/build -j %CPU_COUNT%
 if %ERRORLEVEL% neq 0 exit 1
+
+del /s /q llvm-project\build\*.obj > nul
