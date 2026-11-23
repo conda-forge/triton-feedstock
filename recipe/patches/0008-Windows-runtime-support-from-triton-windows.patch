@@ -13,13 +13,13 @@ upstream.
 ---
  python/triton/_compile_warmup_pool.py         |  14 +-
  python/triton/experimental/gsan/_allocator.py |   3 +-
- python/triton/runtime/build.py                | 156 ++++-
+ python/triton/runtime/build.py                | 160 +++++-
  python/triton/runtime/cache.py                |  18 +-
  python/triton/runtime/driver.py               |  15 +-
  python/triton/windows_utils.py                | 536 ++++++++++++++++++
  third_party/nvidia/backend/driver.c           | 129 +++--
  third_party/nvidia/backend/driver.py          |  38 +-
- 8 files changed, 823 insertions(+), 86 deletions(-)
+ 8 files changed, 827 insertions(+), 86 deletions(-)
  create mode 100644 python/triton/windows_utils.py
 
 diff --git a/python/triton/_compile_warmup_pool.py b/python/triton/_compile_warmup_pool.py
@@ -90,7 +90,7 @@ index cf45d54..133545c 100644
  
  
 diff --git a/python/triton/runtime/build.py b/python/triton/runtime/build.py
-index 636a2e2..10b2e57 100644
+index 636a2e2..71e9e23 100644
 --- a/python/triton/runtime/build.py
 +++ b/python/triton/runtime/build.py
 @@ -19,6 +19,12 @@ from types import ModuleType
@@ -156,7 +156,7 @@ index 636a2e2..10b2e57 100644
      raise RuntimeError(
          "Failed to find C++ compiler. Please specify via CXX environment variable or set triton.knobs.build.impl.")
  
-@@ -59,13 +85,85 @@ def _language_from_filename(source_name: str) -> str:
+@@ -59,13 +85,89 @@ def _language_from_filename(source_name: str) -> str:
      raise ValueError(f"Unrecognized file extension: {source_name}")
  
  
@@ -217,6 +217,10 @@ index 636a2e2..10b2e57 100644
 +        if not (os.name == "nt" and is_clang(cc)):
 +            # Clang does not support -fPIC on Windows
 +            cc_cmd += ["-fPIC"]
++        if is_tcc(cc):
++            # TinyCC defines __STDC_NO_THREADS__, which makes pyport.h of Python >= 3.15
++            # error out; extensions never use _Py_thread_local, so any keyword works
++            cc_cmd += ["-Dthread_local=_Thread_local"]
 +        if sysconfig.get_config_var("Py_GIL_DISABLED"):
 +            cc_cmd += ["-DPy_GIL_DISABLED"]
 +        cc_cmd += [f"-I{dir}" for dir in include_dirs if dir is not None]
@@ -243,7 +247,7 @@ index 636a2e2..10b2e57 100644
      scheme = sysconfig.get_default_scheme()
      # 'posix_local' is a custom scheme on Debian. However, starting Python 3.10, the default install
      # path changes to include 'local'. This change is required to use triton with system-wide python.
-@@ -73,6 +171,7 @@ def _build(name: str, src: str, srcdir: str, library_dirs: list[str], include_di
+@@ -73,6 +175,7 @@ def _build(name: str, src: str, srcdir: str, library_dirs: list[str], include_di
          scheme = 'posix_prefix'
      py_include_dir = sysconfig.get_paths(scheme=scheme)["include"]
      custom_backend_dirs = knobs.build.backend_dirs
@@ -251,7 +255,7 @@ index 636a2e2..10b2e57 100644
      include_dirs = include_dirs + [srcdir, py_include_dir, *custom_backend_dirs]
  
      # add conda-forge specific include directories
-@@ -93,22 +192,34 @@ def _build(name: str, src: str, srcdir: str, library_dirs: list[str], include_di
+@@ -93,22 +196,34 @@ def _build(name: str, src: str, srcdir: str, library_dirs: list[str], include_di
              include_dirs.append(os.path.join(sys.prefix, arch_dependent_include))
      elif platform.system() == "Windows":
          include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
@@ -297,7 +301,7 @@ index 636a2e2..10b2e57 100644
          return f"-l:{lib}"
      return f"-l{lib}"
  
-@@ -128,6 +239,8 @@ def _get_file_extension(language):
+@@ -128,6 +243,8 @@ def _get_file_extension(language):
  
  
  def _load_module_from_path(name: str, path: str) -> ModuleType:
@@ -306,7 +310,7 @@ index 636a2e2..10b2e57 100644
      spec = importlib.util.spec_from_file_location(name, path)
      if not spec or not spec.loader:
          raise RuntimeError(f"Failed to load newly compiled {name} from {path}")
-@@ -165,9 +278,11 @@ def _compile_so(src: bytes, src_path: str, name: str, library_dirs: list[str] |
+@@ -165,9 +282,11 @@ def _compile_so(src: bytes, src_path: str, name: str, library_dirs: list[str] |
              return _load_module_from_path(name, cache_path)
          except (RuntimeError, ImportError):
              log = logging.getLogger(__name__)
@@ -319,7 +323,7 @@ index 636a2e2..10b2e57 100644
          so = _build(name, src_path, tmpdir, library_dirs or [], include_dirs or [], libraries or [], ccflags or [],
                      language=language)
          with open(so, "rb") as f:
-@@ -178,7 +293,7 @@ def _compile_so(src: bytes, src_path: str, name: str, library_dirs: list[str] |
+@@ -178,7 +297,7 @@ def _compile_so(src: bytes, src_path: str, name: str, library_dirs: list[str] |
  
  def _compile_so_from_file(src_path: str, name: str, library_dirs: list[str] | None, include_dirs: list[str] | None,
                            libraries: list[str] | None, ccflags: list[str] | None, load_module: bool):
@@ -328,7 +332,7 @@ index 636a2e2..10b2e57 100644
      src_name = os.path.basename(src_path)
      with open(src_path, "rb") as f:
          src = f.read()
-@@ -192,6 +307,7 @@ def _compile_so_from_src(src: str, name: str, library_dirs: list[str] | None, in
+@@ -192,6 +311,7 @@ def _compile_so_from_src(src: str, name: str, library_dirs: list[str] | None, in
                           libraries: list[str] | None, ccflags: list[str] | None, language, load_module: bool):
      src_bytes = src.encode("utf-8")
      with tempfile.TemporaryDirectory() as tmpdir:
