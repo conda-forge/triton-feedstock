@@ -3,42 +3,6 @@ About triton-feedstock
 
 Feedstock license: [BSD-3-Clause](https://github.com/conda-forge/triton-feedstock/blob/main/LICENSE.txt)
 
-
-About triton
-------------
-
-Home: https://github.com/triton-lang/triton
-
-Package license: MIT
-
-Summary: Development repository for the Triton language and compiler
-
-Development: https://github.com/triton-lang/triton
-
-Documentation: https://triton-lang.org/
-
-This is the development repository of Triton, a language and compiler for writing highly efficient custom Deep-Learning primitives.
-The aim of Triton is to provide an open-source environment to write fast code at higher productivity than CUDA, but also with higher flexibility than other existing DSLs.
-
-About triton
-------------
-
-Home: https://github.com/triton-lang/triton
-
-Package license: MIT AND LGPL-2.1-or-later
-
-Summary: Development repository for the Triton language and compiler
-
-Development: https://github.com/triton-lang/triton
-
-Documentation: https://triton-lang.org/
-
-This is the development repository of Triton, a language and compiler for writing highly efficient custom Deep-Learning primitives.
-The aim of Triton is to provide an open-source environment to write fast code at higher productivity than CUDA, but also with higher flexibility than other existing DSLs.
-
-About triton-dummy
-------------------
-
 Home: https://github.com/triton-lang/triton
 
 Package license: MIT AND LGPL-2.1-or-later
