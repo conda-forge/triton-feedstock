@@ -1,0 +1,237 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Sun, 22 Nov 2026 16:59:08 -0500
+Subject: [PATCH] Fix building on Windows with MSVC and conda-forge dlfcn-win32
+
+---
+ CMakeLists.txt                               | 18 ++++++------
+ python/triton/experimental/gsan/src/GSan.h   | 29 ++++++++++++++++++--
+ setup.py                                     |  5 +++-
+ third_party/amd/include/hipblas_instance.h   |  3 ++
+ third_party/nvidia/CMakeLists.txt            |  6 ++++
+ third_party/nvidia/include/cublas_instance.h | 13 +++++++++
+ third_party/nvidia/triton_nvidia.cc          |  4 +++
+ 7 files changed, 67 insertions(+), 11 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1713a47..0e17ae5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -197,11 +197,8 @@ if(NOT MSVC)
+   set(CMAKE_C_FLAGS_TRITONBUILDWITHO1 "-O1")
+   set(CMAKE_CXX_FLAGS_TRITONBUILDWITHO1 "-O1")
+ else()
+-  set(CMAKE_C_FLAGS_TRITONRELBUILDWITHASSERTS "/Zi /RTC1 /bigobj /Zc:preprocessor /permissive-")
+-  set(CMAKE_CXX_FLAGS_TRITONRELBUILDWITHASSERTS "/Zi /RTC1 /bigobj /Zc:preprocessor /permissive-")
+-  set(CMAKE_EXE_LINKER_FLAGS_TRITONRELBUILDWITHASSERTS "/debug:fastlink /INCREMENTAL")
+-  set(CMAKE_MODULE_LINKER_FLAGS_TRITONRELBUILDWITHASSERTS "/debug:fastlink /INCREMENTAL")
+-  set(CMAKE_SHARED_LINKER_FLAGS_TRITONRELBUILDWITHASSERTS "/debug:fastlink /INCREMENTAL")
++  set(CMAKE_C_FLAGS_TRITONRELBUILDWITHASSERTS "/O2 /bigobj /Zc:preprocessor /permissive-")
++  set(CMAKE_CXX_FLAGS_TRITONRELBUILDWITHASSERTS "/O2 /bigobj /Zc:preprocessor /permissive-")
+ endif()
+ 
+ # Default build type
+@@ -300,6 +297,11 @@ else()
+ endif()
+ 
+ include_directories(".")
++if(WIN32)
++  find_package(dlfcn-win32 REQUIRED)
++  get_target_property(DLFCN_INCLUDE_DIRS dlfcn-win32::dl INTERFACE_INCLUDE_DIRECTORIES)
++  include_directories(${DLFCN_INCLUDE_DIRS})
++endif()
+ # LLVM/MLIR range comparisons can trigger -Wambiguous-reversed-operator in
+ # C++20. Treat these external headers as system includes.
+ include_directories(SYSTEM ${MLIR_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS})
+@@ -449,7 +451,7 @@ if(TRITON_BUILD_PYTHON_MODULE)
+   set_target_properties(triton PROPERTIES INTERFACE_LINK_LIBRARIES "")
+ 
+   if(WIN32)
+-    target_link_libraries(triton PRIVATE ${CMAKE_DL_LIBS})
++    target_link_libraries(triton PRIVATE dlfcn-win32::dl)
+     set_target_properties(triton PROPERTIES SUFFIX ".pyd")
+     set_target_properties(triton PROPERTIES PREFIX "lib")
+   else()
+@@ -483,8 +485,8 @@ if(TRITON_BUILD_PYTHON_MODULE)
+   endif()
+ 
+   configure_file(
+-    "${LLVM_SYSPATH}/bin/FileCheck"
+-    "${TRITON_WHEEL_DIR}/FileCheck"
++    "${LLVM_SYSPATH}/bin/FileCheck${CMAKE_EXECUTABLE_SUFFIX}"
++    "${TRITON_WHEEL_DIR}/FileCheck${CMAKE_EXECUTABLE_SUFFIX}"
+     COPYONLY)
+ 
+   # Install Triton headers and TableGen definitions into the wheel staging
+diff --git a/python/triton/experimental/gsan/src/GSan.h b/python/triton/experimental/gsan/src/GSan.h
+index 0512e63..7452309 100644
+--- a/python/triton/experimental/gsan/src/GSan.h
++++ b/python/triton/experimental/gsan/src/GSan.h
+@@ -11,8 +11,23 @@
+ #define GSAN_HOST_DEVICE
+ #endif
+ 
++#ifdef _MSC_VER
++#include <cstddef>
++#include <cstdint>
++#endif
++
+ namespace gsan {
+ 
++#ifdef _MSC_VER
++using size_t = ::size_t;
++using int16_t = ::int16_t;
++using int64_t = ::int64_t;
++using uint8_t = ::uint8_t;
++using uint16_t = ::uint16_t;
++using uint32_t = ::uint32_t;
++using uintptr_t = ::uintptr_t;
++using uint64_t = ::uint64_t;
++#else
+ using size_t = __SIZE_TYPE__;
+ using int16_t = __INT16_TYPE__;
+ using int64_t = __INT64_TYPE__;
+@@ -21,6 +36,16 @@ using uint16_t = __UINT16_TYPE__;
+ using uint32_t = __UINT32_TYPE__;
+ using uintptr_t = __UINTPTR_TYPE__;
+ using uint64_t = __UINT64_TYPE__;
++#endif
++
++// MSVC only packs adjacent bitfields whose declared types have the same size
++#ifdef _MSC_VER
++using atomic_scope_storage_t = uint16_t;
++using bool_bitfield_t = uint16_t;
++#else
++using atomic_scope_storage_t = uint8_t;
++using bool_bitfield_t = bool;
++#endif
+ 
+ // The table and its pointer lists are immutable while in flight.
+ // Clocks use u32 so all CTAs can publish with a native atomic maximum.
+@@ -41,7 +66,7 @@ static_assert((kReserveSize & (kReserveSize - 1)) == 0,
+ 
+ using thread_id_t = uint16_t;
+ 
+-enum class AtomicScope : uint8_t {
++enum class AtomicScope : atomic_scope_storage_t {
+   NonAtomic,
+   CTA,
+   GPU,
+@@ -57,7 +82,7 @@ struct alignas(4) ScalarClock {
+   AtomicScope scope : 2;
+   // For a release write, the epoch is actually an index into the thread's
+   // circular clock buffer where the full vector clock is stored.
+-  bool isRelease : 1;
++  bool_bitfield_t isRelease : 1;
+ };
+ static constexpr int kMaxThreads = 1 << 12;
+ static_assert(sizeof(ScalarClock) == 4);
+diff --git a/setup.py b/setup.py
+index 7a12082..66208d9 100644
+--- a/setup.py
++++ b/setup.py
+@@ -386,7 +386,10 @@ class CMakeBuild(build_ext):
+         env = os.environ.copy()
+         cmake_dir = get_cmake_dir()
+         subprocess.check_call(["cmake", self.base_dir] + cmake_args, cwd=cmake_dir, env=env)
+-        update_symlink(Path(self.base_dir) / "compile_commands.json", cmake_dir / "compile_commands.json")
++        try:
++            update_symlink(Path(self.base_dir) / "compile_commands.json", cmake_dir / "compile_commands.json")
++        except OSError as e:
++            print(f"could not symlink compile_commands.json: {e}", file=sys.stderr)
+         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=cmake_dir)
+         subprocess.check_call(["cmake", "--build", ".", "--target", "mlir-doc"], cwd=cmake_dir)
+         if check_env_flag("TRITON_EXT_ENABLED"):
+diff --git a/third_party/amd/include/hipblas_instance.h b/third_party/amd/include/hipblas_instance.h
+index 5f1c8e1..f6a6f21 100644
+--- a/third_party/amd/include/hipblas_instance.h
++++ b/third_party/amd/include/hipblas_instance.h
+@@ -3,6 +3,9 @@
+ 
+ #include "hipblas_types.h"
+ #include <dlfcn.h>
++#ifndef RTLD_NOLOAD
++#define RTLD_NOLOAD 0
++#endif
+ #include <sstream>
+ #include <stdexcept>
+ #include <string>
+diff --git a/third_party/nvidia/CMakeLists.txt b/third_party/nvidia/CMakeLists.txt
+index ba831b7..7583a2b 100644
+--- a/third_party/nvidia/CMakeLists.txt
++++ b/third_party/nvidia/CMakeLists.txt
+@@ -18,6 +18,11 @@ if(TRITON_BUILD_PYTHON_MODULE)
+     endif()
+ 
+     set(TRITON_GSAN_INCLUDE_FLAGS "")
++    set(TRITON_GSAN_HOST_FLAGS "")
++    if(WIN32)
++      # the device runtime expects the Itanium bitfield layout
++      list(APPEND TRITON_GSAN_HOST_FLAGS --target=x86_64-unknown-linux-gnu)
++    endif()
+     foreach(include_path IN ITEMS "${TRITON_CUDACRT_PATH}" "${TRITON_CUDART_PATH}")
+       if(NOT "${include_path}" STREQUAL "")
+         list(APPEND TRITON_GSAN_INCLUDE_FLAGS "-I${include_path}")
+@@ -41,6 +46,7 @@ if(TRITON_BUILD_PYTHON_MODULE)
+                 -fcuda-flush-denormals-to-zero
+                 --cuda-gpu-arch=sm_80
+                 --cuda-feature=+ptx70
++                ${TRITON_GSAN_HOST_FLAGS}
+                 ${TRITON_GSAN_INCLUDE_FLAGS}
+                 "${GSAN_RUNTIME_SRC}" -o "${GSAN_RUNTIME_IR}"
+         DEPENDS "${GSAN_RUNTIME_SRC}" ${GSAN_RUNTIME_HDRS}
+diff --git a/third_party/nvidia/include/cublas_instance.h b/third_party/nvidia/include/cublas_instance.h
+index 3d69ba1..a8b6570 100644
+--- a/third_party/nvidia/include/cublas_instance.h
++++ b/third_party/nvidia/include/cublas_instance.h
+@@ -3,6 +3,9 @@
+ 
+ #include "cublas_types.h"
+ #include <dlfcn.h>
++#ifndef RTLD_NOLOAD
++#define RTLD_NOLOAD 0
++#endif
+ #include <stdexcept>
+ #include <string>
+ 
+@@ -41,7 +44,12 @@ private:
+       const cublasLtMatrixLayout_t, const cublasLtMatmulAlgo_t *, void *,
+       size_t, cudaStream_t);
+ 
++#ifdef _WIN32
++  static constexpr const char *name = "cublasLt64_13.dll";
++  static constexpr const char *fallbackName = "cublasLt64_12.dll";
++#else
+   static constexpr const char *name = "libcublas.so";
++#endif
+ 
+   cublasLtCreate_t cublasLtCreate;
+   cublasLtDestroy_t cublasLtDestroy;
+@@ -73,6 +81,11 @@ private:
+       // If not found, try to load it
+       dylibHandle = dlopen(name, RTLD_LOCAL | RTLD_LAZY);
+     }
++#ifdef _WIN32
++    if (dylibHandle == nullptr) {
++      dylibHandle = dlopen(fallbackName, RTLD_LOCAL | RTLD_LAZY);
++    }
++#endif
+     if (dylibHandle == nullptr) {
+       throw std::runtime_error("Could not find `" + std::string(name) +
+                                "`. Make sure it is in your "
+diff --git a/third_party/nvidia/triton_nvidia.cc b/third_party/nvidia/triton_nvidia.cc
+index ea76409..5f5116e 100644
+--- a/third_party/nvidia/triton_nvidia.cc
++++ b/third_party/nvidia/triton_nvidia.cc
+@@ -78,7 +78,11 @@ public:
+   }
+ 
+   CudaExampleUtils() {
++#ifdef _WIN32
++    dylibHandle = dlopen("nvcuda.dll", RTLD_NOLOAD | RTLD_LAZY);
++#else
+     dylibHandle = dlopen("libcuda.so.1", RTLD_NOLOAD | RTLD_LAZY);
++#endif
+     if (dylibHandle == nullptr) {
+       throw std::runtime_error(
+           "Could not find an already-loaded `libcuda.so.1`. Initialize "

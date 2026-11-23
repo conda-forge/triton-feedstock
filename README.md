@@ -5,7 +5,7 @@ Feedstock license: [BSD-3-Clause](https://github.com/conda-forge/triton-feedstoc
 
 Home: https://github.com/triton-lang/triton
 
-Package license: MIT
+Package license: MIT AND LGPL-2.1-or-later
 
 Summary: Development repository for the Triton language and compiler
 

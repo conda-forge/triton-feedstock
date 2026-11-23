@@ -4,6 +4,7 @@ context:
   llvm_commit: b010a18d2b648cab83c83967ff26b8fde11acdc6
   # cmake/amd-llvm-info.json
   amd_llvm_commit: 6bc4aaf6641c56ee104f6200c96a6a571bc77052
+  tinycc_commit: 1d8b731d218b086aec403882bc206e9001d08e67
   build_number: 1
 
 recipe:
@@ -21,19 +22,25 @@ source:
       # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/317#issuecomment-2585460619
       - patches/0004-Add-conda-forge-include-dirs-to-list-of-include-dirs.patch
       - patches/0005-Make-test_aot-importable-without-a-GPU-backend.patch
+      - patches/0006-Fix-building-on-Windows-with-MSVC.patch
+      - patches/0007-Close-ptxas-temporary-files-before-removing-them.patch
+      - patches/0008-Windows-runtime-support-from-triton-windows.patch
   - url: https://github.com/llvm/llvm-project/archive/${{ llvm_commit }}.tar.gz
     sha256: 975ad64f584955a714bddd1a3413db14ba3c8cca8292dc020ab58ac4c09decad
     target_directory: llvm-project
   - url: https://github.com/llvm/llvm-project/archive/${{ amd_llvm_commit }}.tar.gz
     sha256: d3b733961dc1b4de40bfd3bed5fd10e417336f54da20d586f5b3b5ff7aca72bf
     target_directory: llvm-project-amd
+  - if: win
+    then:
+      - url: https://github.com/woct0rdho/tinycc/archive/${{ tinycc_commit }}.tar.gz
+        sha256: 882411178f951c5384b3c993a032ff64575b7a4dc08e3bc732cf35ecc4612313
+        target_directory: tinycc
 
 build:
   number: ${{ build_number }}
   skip:
-    # No success enabling Windows build as of 3.1.0:
-    # https://github.com/conda-forge/triton-feedstock/pull/29#issuecomment-2564371725
-    - win
+    - not win
     # TODO: CPU-only support still under development
     - match(cuda_compiler_version, "==None")
 
@@ -100,37 +107,62 @@ outputs:
         - zlib
         - zstd  # for llvm
         - nlohmann_json
+        - if: win
+          then:
+            - dlfcn-win32
+            - cuda-cudart-dev
         - cuda-cupti-dev
         - cuda-version ${{ cuda_compiler_version }}.*
       run:
         - python
         - setuptools
         - cuda-nvcc-tools
+        - if: win and match(cuda_compiler_version, "<13")
+          then: cuda-nvcc-dev_${{ target_platform }}
+        - if: win
+          then: cuda-cudart-dev
         - cuda-cuobjdump
         - cuda-cudart
         - cuda-cupti
 
     tests:
-      - package_contents:
-          bin:
-            exists:
-              - proton
-              - proton-viewer
-            not_exists:
-              # make sure we don't accidentally install any LLVM files
-              - clang
-              - lld
-              - llvm-as
-              - mlir-opt
-          files:
-            not_exists:
-              - include/**
-              - lib/lib*
+      - if: unix
+        then:
+          package_contents:
+            bin:
+              exists:
+                - proton
+                - proton-viewer
+              not_exists:
+                # make sure we don't accidentally install any LLVM files
+                - clang
+                - lld
+                - llvm-as
+                - mlir-opt
+            files:
+              not_exists:
+                - include/**
+                - lib/lib*
       - python:
           imports:
             - triton
             - triton._C.libtriton
           pip_check: true
+      - if: win
+        then:
+          - package_contents:
+              site_packages:
+                - triton/runtime/tcc/tcc.exe
+                - triton/runtime/tcc/lib/cuda.def
+                - triton/runtime/tcc/lib/libtcc1.a
+          - files:
+              recipe:
+                - test_windows_launcher.py
+            requirements:
+              run:
+                - python
+            script:
+              - python test_windows_launcher.py
       # TODO: drop this condition once `pytorch * cpu*` is published for python 3.15;
       # until then this test environment cannot be solved, and pytorch's CUDA builds
       # in turn need triton for python 3.15, so this breaks the cycle
@@ -148,18 +180,26 @@ outputs:
                 # (also we're doing non-GPU testing)
                 - pytorch * cpu*
             script:
-              - proton --help
+              - if: unix
+                then: proton --help
               # requires unpackaged 'llnl-hatchet' (also pandas)
               # - proton-viewer
               # test suite essentially depends on availability of a physical GPU,
               # see https://github.com/triton-lang/triton/issues/466;
               # run a test that does not require a GPU but checks
               # if triton.compile() works
-              - TRITON_INTERPRET=1 pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
+              - if: unix
+                then: TRITON_INTERPRET=1 pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
+                else:
+                  - set TRITON_INTERPRET=1
+                  - pytest -v python/test/unit/tools/test_aot.py::test_ttgir_to_asm
 
 about:
-  license: MIT
-  license_file: LICENSE
+  license: ${{ "MIT AND LGPL-2.1-or-later" if win else "MIT" }}
+  license_file:
+    - LICENSE
+    - if: win
+      then: tinycc/COPYING
   summary: Development repository for the Triton language and compiler
   description: |
     This is the development repository of Triton, a language and compiler for writing highly efficient custom Deep-Learning primitives.

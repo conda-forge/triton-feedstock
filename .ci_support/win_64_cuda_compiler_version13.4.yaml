@@ -1,11 +1,5 @@
-DOCKER_PLATFORM:
-- linux/aarch64
-arm_variant_type:
-- tegra
 c_stdlib:
-- sysroot
-c_stdlib_version:
-- '2.34'
+- vs
 channel_sources:
 - conda-forge
 channel_targets:
@@ -13,15 +7,13 @@ channel_targets:
 cuda_compiler:
 - cuda-nvcc
 cuda_compiler_version:
-- '12.9'
+- '13.4'
 cxx_compiler:
-- gxx
+- vs
 cxx_compiler_version:
-- '14'
-docker_image:
-- quay.io/condaforge/linux-anvil-aarch64:alma10
+- '2022'
 github_actions_labels:
-- blacksmith-16vcpu-ubuntu-2404-arm
+- blacksmith-16vcpu-windows-2025
 pin_run_as_build:
   python:
     min_pin: x.x
@@ -33,12 +25,7 @@ python:
 - 3.14.* *_cp314
 - 3.15.* *_cp315
 target_platform:
-- linux-aarch64
-zip_keys:
-- - cxx_compiler_version
-  - c_stdlib_version
-  - cuda_compiler_version
-  - arm_variant_type
+- win-64
 zlib:
 - '1'
 zstd:

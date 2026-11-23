@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Sun, 22 Nov 2026 20:23:19 -0500
+Subject: [PATCH] Close ptxas temporary files before removing them
+
+---
+ third_party/nvidia/backend/compiler.py | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/third_party/nvidia/backend/compiler.py b/third_party/nvidia/backend/compiler.py
+index a585efa..d9ee983 100644
+--- a/third_party/nvidia/backend/compiler.py
++++ b/third_party/nvidia/backend/compiler.py
+@@ -578,7 +578,7 @@ class CUDABackend(BaseBackend):
+         with tempfile.NamedTemporaryFile(delete=False, mode='w', suffix='.ptx') as fsrc, \
+             tempfile.NamedTemporaryFile(delete=False, mode='r', suffix='.log') as flog:
+             fsrc.write(src)
+-            fsrc.flush()
++            fsrc.close()
+             fbin = fsrc.name + '.o'
+ 
+             debug_info = []
+@@ -614,7 +614,10 @@ class CUDABackend(BaseBackend):
+                 fsrc.name, '-o', fbin
+             ]
+             try:
+-                subprocess.run(ptxas_cmd, check=True, close_fds=False, stderr=flog)
++                try:
++                    subprocess.run(ptxas_cmd, check=True, close_fds=False, stderr=flog)
++                finally:
++                    flog.close()
+                 if knobs.nvidia.dump_ptxas_log:
+                     with open(flog.name) as log_file:
+                         print(log_file.read())
