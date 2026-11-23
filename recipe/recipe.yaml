@@ -107,6 +107,8 @@ outputs:
         - python
         - setuptools
         - cuda-nvcc-tools
+        - if: win and match(cuda_compiler_version, "<13")
+          then: cuda-nvcc-dev_${{ target_platform }}
         - cuda-cuobjdump
         - cuda-cudart
         - cuda-cupti
