@@ -47,7 +47,9 @@ tinycc\win32\tcc.exe -impdef "%PREFIX%\python%PY_NODOT%.dll" -o tinycc\win32\lib
 if %ERRORLEVEL% neq 0 exit 1
 tinycc\win32\tcc.exe -impdef "%PREFIX%\python3.dll" -o tinycc\win32\lib\python3.def
 if %ERRORLEVEL% neq 0 exit 1
-%PYTHON% "%RECIPE_DIR%\gen_cuda_def.py" "%LIBRARY_LIB%\x64\cuda.lib" tinycc\win32\lib\cuda.def
+set "CUDA_LIB=%LIBRARY_LIB%\x64\cuda.lib"
+if not exist "%CUDA_LIB%" set "CUDA_LIB=%LIBRARY_LIB%\cuda.lib"
+%PYTHON% "%RECIPE_DIR%\gen_cuda_def.py" "%CUDA_LIB%" tinycc\win32\lib\cuda.def
 if %ERRORLEVEL% neq 0 exit 1
 
 set "TCC_DIR=%SP_DIR%\triton\runtime\tcc"
