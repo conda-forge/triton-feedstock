@@ -36,7 +36,6 @@ Current release info
 | Name | Downloads | Version | Platforms |
 | --- | --- | --- | --- |
 | [![Conda Recipe](https://img.shields.io/badge/recipe-triton-green.svg)](https://anaconda.org/conda-forge/triton) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/triton.svg)](https://anaconda.org/conda-forge/triton) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/triton.svg)](https://anaconda.org/conda-forge/triton) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/triton.svg)](https://anaconda.org/conda-forge/triton) |
-| [![Conda Recipe](https://img.shields.io/badge/recipe-triton--dummy-green.svg)](https://anaconda.org/conda-forge/triton-dummy) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/triton-dummy.svg)](https://anaconda.org/conda-forge/triton-dummy) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/triton-dummy.svg)](https://anaconda.org/conda-forge/triton-dummy) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/triton-dummy.svg)](https://anaconda.org/conda-forge/triton-dummy) |
 
 Installing triton
 =================
@@ -55,7 +54,7 @@ How to use
 <summary>With conda</summary>
 
 ```
-conda install triton triton-dummy
+conda install triton
 ```
 
 </details>
@@ -64,7 +63,7 @@ conda install triton triton-dummy
 <summary>With mamba</summary>
 
 ```
-mamba install triton triton-dummy
+mamba install triton
 ```
 
 </details>
@@ -74,9 +73,9 @@ mamba install triton triton-dummy
 
 ```
 # for adding to your local project
-pixi add triton triton-dummy
+pixi add triton
 # for installing globally
-pixi global install triton triton-dummy
+pixi global install triton
 ```
 
 </details>
